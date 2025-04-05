@@ -26,14 +26,14 @@ export function statusColor(status: string): {
       };
     case "complete":
       return {
-        bg: "bg-orange-100",
-        text: "text-orange-800",
+        bg: "bg-green-100",
+        text: "text-green-800",
         label: "Complete",
       };
     case "overdue":
       return {
-        bg: "bg-gray-100",
-        text: "text-gray-800",
+        bg: "bg-red-100",
+        text: "text-red-800",
         label: "Overdue",
       };
     default:

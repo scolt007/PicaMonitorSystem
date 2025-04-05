@@ -322,7 +322,7 @@ const Dashboard: React.FC = () => {
                   <PieChart
                     data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
                     labels={["Progress", "Complete", "Overdue"]}
-                    colors={["#2563eb", "#f97316", "#9ca3af"]}
+                    colors={["#2563eb", "#22c55e", "#ef4444"]}
                   />
                 )}
               </div>
@@ -345,11 +345,11 @@ const Dashboard: React.FC = () => {
                     <span>PROGRESS</span>
                   </div>
                   <div className="flex items-center mr-3">
-                    <div className="w-3 h-3 bg-orange-500 rounded-sm mr-1"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
                     <span>COMPLETE</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-gray-400 rounded-sm mr-1"></div>
+                    <div className="w-3 h-3 bg-red-500 rounded-sm mr-1"></div>
                     <span>OVERDUE</span>
                   </div>
                 </div>
@@ -365,9 +365,9 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center text-sm">
                 <div className="w-4 h-4 bg-primary mr-1"></div>
                 <span className="mr-3">Progress</span>
-                <div className="w-4 h-4 bg-orange-500 mr-1"></div>
+                <div className="w-4 h-4 bg-green-500 mr-1"></div>
                 <span className="mr-3">Complete</span>
-                <div className="w-4 h-4 bg-gray-400 mr-1"></div>
+                <div className="w-4 h-4 bg-red-500 mr-1"></div>
                 <span>Overdue</span>
               </div>
             </div>
@@ -385,12 +385,12 @@ const Dashboard: React.FC = () => {
                   {
                     label: "Complete",
                     data: calcFilteredDeptStats.map((d: any) => d.complete),
-                    backgroundColor: "#f97316",
+                    backgroundColor: "#22c55e", // Green for Complete
                   },
                   {
                     label: "Overdue",
                     data: calcFilteredDeptStats.map((d: any) => d.overdue),
-                    backgroundColor: "#9ca3af",
+                    backgroundColor: "#ef4444", // Red for Overdue
                   },
                 ]}
                 maxY={5}
@@ -416,12 +416,12 @@ const Dashboard: React.FC = () => {
                   {
                     label: "Complete",
                     data: calcFilteredSiteStats.map((s: any) => s.complete),
-                    backgroundColor: "#f97316",
+                    backgroundColor: "#22c55e", // Green for Complete
                   },
                   {
                     label: "Overdue",
                     data: calcFilteredSiteStats.map((s: any) => s.overdue),
-                    backgroundColor: "#9ca3af",
+                    backgroundColor: "#ef4444", // Red for Overdue
                   },
                 ]}
                 maxY={6}
