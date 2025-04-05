@@ -44,6 +44,7 @@ export const picas = pgTable("picas", {
   dueDate: date("due_date").notNull(),
   status: text("status").notNull().default("progress"), // progress, complete, overdue
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Users (optional, for authentication)
@@ -58,7 +59,7 @@ export const picaHistory = pgTable("pica_history", {
   id: serial("id").primaryKey(),
   picaId: integer("pica_id").references(() => picas.id).notNull(),
   userId: integer("user_id").references(() => users.id),
-  changeDate: timestamp("change_date").defaultNow().notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
   oldStatus: text("old_status"),
   newStatus: text("new_status").notNull(),
   comment: text("comment"),
@@ -139,6 +140,7 @@ export type ProjectSite = typeof projectSites.$inferSelect;
 export const insertPicaSchema = createInsertSchema(picas).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertPica = z.infer<typeof insertPicaSchema>;
@@ -161,7 +163,7 @@ export type User = typeof users.$inferSelect;
 // PICA History schema and types
 export const insertPicaHistorySchema = createInsertSchema(picaHistory).omit({
   id: true,
-  changeDate: true,
+  timestamp: true,
 });
 
 export type InsertPicaHistory = z.infer<typeof insertPicaHistorySchema>;

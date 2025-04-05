@@ -271,9 +271,15 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // Always update the updatedAt timestamp when updating a PICA
+    const updateData = {
+      ...pica,
+      updatedAt: new Date()
+    };
+    
     const [updatedPica] = await db
       .update(picas)
-      .set(pica)
+      .set(updateData)
       .where(eq(picas.id, id))
       .returning();
     return updatedPica || undefined;
@@ -456,7 +462,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(picaHistory)
       .where(eq(picaHistory.picaId, picaId))
-      .orderBy(desc(picaHistory.changeDate));
+      .orderBy(desc(picaHistory.timestamp));
       
     const result: PicaHistoryWithRelations[] = [];
     

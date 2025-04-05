@@ -247,6 +247,7 @@ const PicaProgress: React.FC = () => {
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Corrective Action</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">PIC</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Due Date</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Last Updated</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Status</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Action</th>
                 </tr>
@@ -261,6 +262,7 @@ const PicaProgress: React.FC = () => {
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-20" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-32" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-48" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
@@ -282,6 +284,7 @@ const PicaProgress: React.FC = () => {
                       </td>
                       <td className="py-2 px-4 border-b text-sm">{pica.personInCharge.name}</td>
                       <td className="py-2 px-4 border-b text-sm">{formatDate(pica.dueDate)}</td>
+                      <td className="py-2 px-4 border-b text-sm">{formatDate(pica.updatedAt)}</td>
                       <td className="py-2 px-4 border-b text-sm">
                         <StatusBadge status={pica.status} />
                       </td>
@@ -307,7 +310,7 @@ const PicaProgress: React.FC = () => {
                 ) : (
                   // Show no data message
                   <tr>
-                    <td colSpan={9} className="py-4 text-center text-sm text-gray-500">
+                    <td colSpan={10} className="py-4 text-center text-sm text-gray-500">
                       {searchQuery ? "No matching PICA records found" : "No PICA records found"}
                     </td>
                   </tr>
