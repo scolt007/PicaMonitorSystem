@@ -8,9 +8,21 @@ import { insertUserSchema, User as UserType, UserRole } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+// Define the auth credentials types
 type LoginCredentials = {
   username: string;
   password: string;
+};
+
+// Define the registration payload type to include the extra fields
+type RegisterPayload = {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  role?: string;
+  signupCode?: string;
+  organizationName?: string;
 };
 
 type AuthContextType = {
@@ -23,7 +35,7 @@ type AuthContextType = {
   canDelete: boolean;
   login: UseMutationResult<UserType, Error, LoginCredentials>;
   logout: UseMutationResult<void, Error, void>;
-  register: UseMutationResult<UserType, Error, typeof insertUserSchema._type>;
+  register: UseMutationResult<UserType, Error, RegisterPayload>;
 };
 
 // Create the auth context
@@ -123,9 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Register mutation
+// Register mutation
   const register = useMutation({
-    mutationFn: async (userData: typeof insertUserSchema._type) => {
+    mutationFn: async (userData: RegisterPayload) => {
       const res = await apiRequest("POST", "/api/auth/register", userData);
       return await res.json();
     },

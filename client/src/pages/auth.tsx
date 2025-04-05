@@ -11,6 +11,17 @@ import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
+// Define RegisterPayload type locally
+interface RegisterPayload {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  role?: string;
+  signupCode?: string;
+  organizationName?: string;
+}
+
 // Login form schema
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -73,15 +84,24 @@ const AuthPage = () => {
 
   // Handle register submit
   const onRegisterSubmit = (data: RegisterFormValues) => {
-    register.mutate({
+    const registerPayload: RegisterPayload = {
       username: data.username,
       password: data.password,
       name: data.name,
       email: `${data.username}@picamonitor.com`, // Generate generic email
-      signupCode: data.signupCode,
-      organizationName: data.organizationName,
       role: "user", // Default role for new registrations
-    });
+    };
+
+    // Only include these fields if they have values
+    if (data.signupCode) {
+      registerPayload.signupCode = data.signupCode;
+    }
+    
+    if (data.organizationName) {
+      registerPayload.organizationName = data.organizationName;
+    }
+
+    register.mutate(registerPayload);
   };
 
   return (
