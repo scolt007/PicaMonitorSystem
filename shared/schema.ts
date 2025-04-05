@@ -47,11 +47,20 @@ export const picas = pgTable("picas", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Users (optional, for authentication)
+// User roles enum
+export const userRoleEnum = z.enum(["admin", "user", "public"]);
+export type UserRole = z.infer<typeof userRoleEnum>;
+
+// Users for authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("user"), // admin, user, public
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastLogin: timestamp("last_login"),
 });
 
 // PICA history table to track changes
@@ -155,6 +164,8 @@ export type PicaWithRelations = Pica & {
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
+  createdAt: true,
+  lastLogin: true
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

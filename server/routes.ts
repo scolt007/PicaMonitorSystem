@@ -2,14 +2,17 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertPicaSchema, insertPersonSchema, insertDepartmentSchema, insertProjectSiteSchema } from "@shared/schema";
+import { insertPicaSchema, insertPersonSchema, insertDepartmentSchema, insertProjectSiteSchema, insertUserSchema } from "@shared/schema";
+import { setupAuth, canEdit, canDelete } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
   // API prefix
   const apiPrefix = '/api';
   
   // --- PICA Routes ---
-  // Get all PICAs with relations
+  // Get all PICAs with relations (public can view)
   app.get(`${apiPrefix}/picas`, async (req, res) => {
     try {
       const picas = await storage.getPicasWithRelations();
@@ -85,8 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new PICA
-  app.post(`${apiPrefix}/picas`, async (req, res) => {
+  // Create a new PICA (requires edit permission)
+  app.post(`${apiPrefix}/picas`, canEdit, async (req, res) => {
     try {
       const picaData = insertPicaSchema.parse(req.body);
       const pica = await storage.createPica(picaData);
@@ -99,8 +102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a PICA
-  app.put(`${apiPrefix}/picas/:id`, async (req, res) => {
+  // Update a PICA (requires edit permission)
+  app.put(`${apiPrefix}/picas/:id`, canEdit, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -153,8 +156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a PICA
-  app.delete(`${apiPrefix}/picas/:id`, async (req, res) => {
+  // Delete a PICA (requires delete permission)
+  app.delete(`${apiPrefix}/picas/:id`, canDelete, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -202,8 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new person
-  app.post(`${apiPrefix}/people`, async (req, res) => {
+  // Create a new person (requires edit permission)
+  app.post(`${apiPrefix}/people`, canEdit, async (req, res) => {
     try {
       const personData = insertPersonSchema.parse(req.body);
       const person = await storage.createPerson(personData);
@@ -216,8 +219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a person
-  app.put(`${apiPrefix}/people/:id`, async (req, res) => {
+  // Update a person (requires edit permission)
+  app.put(`${apiPrefix}/people/:id`, canEdit, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -240,8 +243,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a person
-  app.delete(`${apiPrefix}/people/:id`, async (req, res) => {
+  // Delete a person (requires delete permission)
+  app.delete(`${apiPrefix}/people/:id`, canDelete, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -289,8 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new department
-  app.post(`${apiPrefix}/departments`, async (req, res) => {
+  // Create a new department (requires edit permission)
+  app.post(`${apiPrefix}/departments`, canEdit, async (req, res) => {
     try {
       const departmentData = insertDepartmentSchema.parse(req.body);
       const department = await storage.createDepartment(departmentData);
@@ -303,8 +306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a department
-  app.put(`${apiPrefix}/departments/:id`, async (req, res) => {
+  // Update a department (requires edit permission)
+  app.put(`${apiPrefix}/departments/:id`, canEdit, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -327,8 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a department
-  app.delete(`${apiPrefix}/departments/:id`, async (req, res) => {
+  // Delete a department (requires delete permission)
+  app.delete(`${apiPrefix}/departments/:id`, canDelete, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -376,8 +379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new project site
-  app.post(`${apiPrefix}/project-sites`, async (req, res) => {
+  // Create a new project site (requires edit permission)
+  app.post(`${apiPrefix}/project-sites`, canEdit, async (req, res) => {
     try {
       const projectSiteData = insertProjectSiteSchema.parse(req.body);
       const projectSite = await storage.createProjectSite(projectSiteData);
@@ -390,8 +393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a project site
-  app.put(`${apiPrefix}/project-sites/:id`, async (req, res) => {
+  // Update a project site (requires edit permission)
+  app.put(`${apiPrefix}/project-sites/:id`, canEdit, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -414,8 +417,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a project site
-  app.delete(`${apiPrefix}/project-sites/:id`, async (req, res) => {
+  // Delete a project site (requires delete permission)
+  app.delete(`${apiPrefix}/project-sites/:id`, canDelete, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -430,6 +433,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Project site deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete project site" });
+    }
+  });
+
+  // --- User Management Routes ---
+  // Get all users (admin only)
+  app.get(`${apiPrefix}/users`, canDelete, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Don't send passwords to client
+      const safeUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+
+  // Get a single user by ID (admin only)
+  app.get(`${apiPrefix}/users/:id`, canDelete, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve user" });
+    }
+  });
+
+  // Create a new user (admin only)
+  app.post(`${apiPrefix}/users`, canDelete, async (req, res) => {
+    try {
+      // Create hash of password in auth.ts during registration, not here
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  // Update a user (admin only)
+  app.put(`${apiPrefix}/users/:id`, canDelete, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const userData = insertUserSchema.partial().parse(req.body);
+      
+      // Handle password update specially
+      if (userData.password) {
+        // Password should be hashed by auth handler before storage
+        // This route should not allow password changes, use a separate endpoint
+        delete userData.password;
+      }
+      
+      const updatedUser = await storage.updateUser(id, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password back to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Delete a user (admin only)
+  app.delete(`${apiPrefix}/users/:id`, canDelete, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      // Prevent deleting self
+      if (req.user && (req.user as Express.User).id === id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 
