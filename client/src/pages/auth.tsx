@@ -21,10 +21,14 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  passwordConfirm: z.string().min(6, "Confirm password is required"),
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
   signupCode: z.string().optional(),
   organizationName: z.string().optional(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords don't match",
+  path: ["passwordConfirm"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -56,6 +60,7 @@ const AuthPage = () => {
     defaultValues: {
       username: "",
       password: "",
+      passwordConfirm: "",
       name: "",
       email: "",
       signupCode: "",
@@ -71,7 +76,12 @@ const AuthPage = () => {
   // Handle register submit
   const onRegisterSubmit = (data: RegisterFormValues) => {
     register.mutate({
-      ...data,
+      username: data.username,
+      password: data.password,
+      name: data.name,
+      email: data.email,
+      signupCode: data.signupCode,
+      organizationName: data.organizationName,
       role: "user", // Default role for new registrations
     });
   };
@@ -213,6 +223,19 @@ const AuthPage = () => {
                       />
                       {registerForm.formState.errors.password && (
                         <p className="text-sm text-red-500">{registerForm.formState.errors.password.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="password-confirm" className="text-sm font-medium">Confirm Password</label>
+                      <Input
+                        id="password-confirm"
+                        type="password"
+                        placeholder="Confirm your password"
+                        {...registerForm.register("passwordConfirm")}
+                      />
+                      {registerForm.formState.errors.passwordConfirm && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.passwordConfirm.message}</p>
                       )}
                     </div>
 
