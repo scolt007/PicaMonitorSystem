@@ -20,51 +20,36 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading, isAdmin, canEdit: userCanEdit } = useAuth();
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <Route path={path}>
-        {() => (
-          <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-      </Route>
-    );
-  }
+  return (
+    <Route path={path}>
+      {(params) => {
+        // Loading state
+        if (isLoading) {
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          );
+        }
 
-  // Public route - allow anyone
-  if (!requireAuth) {
-    return <Route path={path}>{(params) => <Component {...params} />}</Route>;
-  }
+        // Admin-only route
+        if (adminOnly && !isAdmin) {
+          return <Redirect to="/auth" />;
+        }
 
-  // Admin-only route
-  if (adminOnly && !isAdmin) {
-    return (
-      <Route path={path}>
-        {() => <Redirect to="/auth" />}
-      </Route>
-    );
-  }
+        // Edit-permission route
+        if (canEdit && !userCanEdit) {
+          return <Redirect to="/auth" />;
+        }
 
-  // Edit-permission route
-  if (canEdit && !userCanEdit) {
-    return (
-      <Route path={path}>
-        {() => <Redirect to="/auth" />}
-      </Route>
-    );
-  }
+        // Any authenticated user route
+        if (requireAuth && !isAuthenticated) {
+          return <Redirect to="/auth" />;
+        }
 
-  // Any authenticated user route
-  if (requireAuth && !isAuthenticated) {
-    return (
-      <Route path={path}>
-        {() => <Redirect to="/auth" />}
-      </Route>
-    );
-  }
-
-  // Render the component if all conditions are met
-  return <Route path={path}>{(params) => <Component {...params} />}</Route>;
+        // Render the component if all conditions are met
+        return <Component {...params} />;
+      }}
+    </Route>
+  );
 }

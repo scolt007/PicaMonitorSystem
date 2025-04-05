@@ -22,30 +22,80 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Layout>
-          <Switch>
-            {/* Public routes */}
-            <Route path="/auth" component={Auth} />
-            
-            {/* Routes accessible to anyone (even without login) */}
-            <ProtectedRoute path="/" component={Dashboard} requireAuth={false} />
-            <ProtectedRoute path="/dashboard" component={Dashboard} requireAuth={false} />
-            <ProtectedRoute path="/calendar-pica" component={CalendarPica} requireAuth={false} />
-            
-            {/* Routes that require login and editing permissions */}
-            <ProtectedRoute path="/new-pica" component={NewPica} canEdit={true} />
-            <ProtectedRoute path="/pica-progress" component={PicaProgress} canEdit={true} />
-            
-            {/* Routes that require admin permissions */}
-            <ProtectedRoute path="/person-in-charge" component={PersonInCharge} adminOnly={true} />
-            <ProtectedRoute path="/department" component={Department} adminOnly={true} />
-            <ProtectedRoute path="/project-site" component={ProjectSite} adminOnly={true} />
-            <ProtectedRoute path="/user" component={User} adminOnly={true} />
-            
-            {/* 404 route */}
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
+        <Switch>
+          {/* Public routes */}
+          <Route path="/auth" component={Auth} />
+          
+          {/* Routes accessible to anyone (even without login) */}
+          <Route path="/">
+            {() => (
+              <Layout>
+                <Dashboard />
+              </Layout>
+            )}
+          </Route>
+          <Route path="/dashboard">
+            {() => (
+              <Layout>
+                <Dashboard />
+              </Layout>
+            )}
+          </Route>
+          <Route path="/calendar-pica">
+            {() => (
+              <Layout>
+                <CalendarPica />
+              </Layout>
+            )}
+          </Route>
+          
+          {/* Routes that require login and editing permissions */}
+          <ProtectedRoute path="/new-pica" component={(params) => (
+            <Layout>
+              <NewPica {...params} />
+            </Layout>
+          )} canEdit={true} />
+          
+          <ProtectedRoute path="/pica-progress" component={(params) => (
+            <Layout>
+              <PicaProgress {...params} />
+            </Layout>
+          )} canEdit={true} />
+          
+          {/* Routes that require admin permissions */}
+          <ProtectedRoute path="/person-in-charge" component={(params) => (
+            <Layout>
+              <PersonInCharge {...params} />
+            </Layout>
+          )} adminOnly={true} />
+          
+          <ProtectedRoute path="/department" component={(params) => (
+            <Layout>
+              <Department {...params} />
+            </Layout>
+          )} adminOnly={true} />
+          
+          <ProtectedRoute path="/project-site" component={(params) => (
+            <Layout>
+              <ProjectSite {...params} />
+            </Layout>
+          )} adminOnly={true} />
+          
+          <ProtectedRoute path="/user" component={(params) => (
+            <Layout>
+              <User {...params} />
+            </Layout>
+          )} adminOnly={true} />
+          
+          {/* 404 route */}
+          <Route>
+            {() => (
+              <Layout>
+                <NotFound />
+              </Layout>
+            )}
+          </Route>
+        </Switch>
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
