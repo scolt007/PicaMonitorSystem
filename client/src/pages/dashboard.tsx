@@ -315,6 +315,18 @@ const Dashboard: React.FC = () => {
     
     return filtered;
   }, [picas, activeFilter, dateRange]);
+  
+  // For table pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredPicas.length / itemsPerPage);
+  
+  // Get current page items
+  const getCurrentPageItems = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredPicas.slice(startIndex, endIndex);
+  };
 
   return (
     <div>
@@ -694,8 +706,8 @@ const Dashboard: React.FC = () => {
                         </tr>
                       ))
                   ) : filteredPicas.length > 0 ? (
-                    // Only show first 5 items to keep it compact
-                    filteredPicas.slice(0, 5).map((pica) => (
+                    // Show current page items
+                    getCurrentPageItems().map((pica) => (
                       <tr key={pica.id}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
                           {pica.date ? format(new Date(pica.date), 'dd MMM yyyy') : '-'}
@@ -720,15 +732,31 @@ const Dashboard: React.FC = () => {
                           <StatusBadge status={pica.status} />
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">
-                          <Link href={`/pica-progress?picaId=${pica.picaId}`}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
+                          <div className="flex space-x-1">
+                            <Link href={`/pica-progress?picaId=${pica.picaId}`}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                title="Edit PICA"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Link href={`/pica-progress?picaId=${pica.picaId}&action=view`}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                title="View Details"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                                  <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                              </Button>
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -745,9 +773,43 @@ const Dashboard: React.FC = () => {
                 </tbody>
               </table>
             </div>
-            {filteredPicas.length > 5 && (
-              <div className="text-center text-xs text-gray-500 mt-2">
-                Showing 5 of {filteredPicas.length} items
+            {/* Pagination controls */}
+            {filteredPicas.length > 0 && (
+              <div className="flex items-center justify-between border-t border-gray-200 px-3 py-2 mt-2">
+                <div className="flex items-center text-xs text-gray-700">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredPicas.length)} of {filteredPicas.length} items
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Previous
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <Button
+                      key={i}
+                      variant={currentPage === i + 1 ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 w-7 text-xs"
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </div>
