@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { formatDate } from "@/lib/utils";
 import { insertPicaSchema } from "@shared/schema";
+import { Plus, Trash2 } from "lucide-react";
+
+// Create a single PICA line item schema
+const picaLineItemSchema = z.object({
+  sequence: z.number(),
+  issue: z.string().min(1, "Issue is required"),
+  problemIdentification: z.string().min(1, "Problem identification is required"),
+  correctiveAction: z.string().min(1, "Corrective action is required"),
+  personInChargeId: z.number().min(1, "Person in charge is required"),
+  dueDate: z.string().min(1, "Due date is required"),
+});
 
 // Extend the schema with form-specific validation
-const formSchema = insertPicaSchema.extend({
+const formSchema = z.object({
+  projectSiteId: z.number().min(1, "Project site is required"),
+  masterPicaId: z.string().min(1, "Master PICA ID is required"),
   date: z.string().min(1, "Date is required"),
-  dueDate: z.string().min(1, "Due date is required"),
+  picaItems: z.array(picaLineItemSchema).min(1, "At least one PICA item is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -36,35 +48,47 @@ const NewPica: React.FC = () => {
   });
 
   const [selectedProjectSite, setSelectedProjectSite] = useState<string>("");
+  const [masterPicaId, setMasterPicaId] = useState<string>("");
 
-  // Generate PICA ID based on selected project site
-  const generatePicaId = (siteCode: string) => {
-    // Generate a date-based ID: MMYY + SiteCode + Sequential Number
+  // Generate Master PICA ID based on selected project site
+  const generateMasterPicaId = (siteCode: string) => {
+    // Generate a date-based ID: MMYY + SiteCode
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const year = String(now.getFullYear()).slice(-2);
     
-    // For demo purposes, use a random number between 1-99 
-    // In a real app, you'd query existing IDs to find the next available number
-    const sequentialNumber = Math.floor(Math.random() * 99) + 1;
-    
-    return `${month}${year}${siteCode}${String(sequentialNumber).padStart(2, "0")}`;
+    return `${month}${year}${siteCode}`;
+  };
+
+  // Generate PICA ID for a specific item
+  const generatePicaId = (masterPicaId: string, sequence: number) => {
+    return `${masterPicaId}${String(sequence).padStart(2, "0")}`;
   };
 
   // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      picaId: "",
       projectSiteId: 0,
+      masterPicaId: "",
       date: new Date().toISOString().slice(0, 10),
-      issue: "",
-      problemIdentification: "",
-      correctiveAction: "",
-      personInChargeId: 0,
-      dueDate: "",
-      status: "progress",
+      picaItems: [
+        {
+          sequence: 1,
+          issue: "",
+          problemIdentification: "",
+          correctiveAction: "",
+          personInChargeId: 0,
+          dueDate: new Date().toISOString().slice(0, 10),
+        },
+      ],
     },
+  });
+
+  // Create field array for PICA items
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "picaItems",
   });
 
   // Handle project site selection
@@ -73,26 +97,73 @@ const NewPica: React.FC = () => {
     
     const site = projectSites?.find((site: any) => site.id.toString() === value);
     if (site) {
-      const picaId = generatePicaId(site.code);
-      form.setValue("picaId", picaId);
+      const newMasterPicaId = generateMasterPicaId(site.code);
+      setMasterPicaId(newMasterPicaId);
+      form.setValue("masterPicaId", newMasterPicaId);
       form.setValue("projectSiteId", parseInt(value));
     }
   };
 
+  // Add a new PICA item row
+  const handleAddPicaItem = () => {
+    append({
+      sequence: fields.length + 1,
+      issue: "",
+      problemIdentification: "",
+      correctiveAction: "",
+      personInChargeId: 0,
+      dueDate: new Date().toISOString().slice(0, 10),
+    });
+  };
+
   // Create PICA mutation
   const createPica = useMutation({
-    mutationFn: async (data: FormValues) => {
-      return apiRequest("POST", "/api/picas", data);
+    mutationFn: async (data: any) => {
+      // We'll create multiple PICA entries, one for each item
+      const promises = data.picaItems.map((item: any, index: number) => {
+        const picaId = generatePicaId(data.masterPicaId, item.sequence);
+        
+        const picaData = {
+          picaId,
+          projectSiteId: data.projectSiteId,
+          date: data.date,
+          issue: item.issue,
+          problemIdentification: item.problemIdentification,
+          correctiveAction: item.correctiveAction,
+          personInChargeId: item.personInChargeId,
+          dueDate: item.dueDate,
+          status: "progress",
+        };
+        
+        return apiRequest("POST", "/api/picas", picaData);
+      });
+      
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
       toast({
         title: "Success",
-        description: "PICA created successfully",
+        description: "PICA(s) created successfully",
       });
-      form.reset();
+      form.reset({
+        projectSiteId: 0,
+        masterPicaId: "",
+        date: new Date().toISOString().slice(0, 10),
+        picaItems: [
+          {
+            sequence: 1,
+            issue: "",
+            problemIdentification: "",
+            correctiveAction: "",
+            personInChargeId: 0,
+            dueDate: new Date().toISOString().slice(0, 10),
+          },
+        ],
+      });
       setSelectedProjectSite("");
+      setMasterPicaId("");
     },
     onError: (error) => {
       toast({
@@ -146,16 +217,32 @@ const NewPica: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="bg-primary text-white px-4 py-2 font-medium">ID</div>
+                  <div className="bg-primary text-white px-4 py-2 font-medium">MASTER ID</div>
                   <div className="border border-gray-300 px-4 py-2">
                     <FormField
                       control={form.control}
-                      name="picaId"
+                      name="masterPicaId"
                       render={({ field }) => (
                         <Input
                           {...field}
                           className="w-full focus:outline-none border-0 p-0 shadow-none"
                           readOnly
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="bg-primary text-white px-4 py-2 font-medium">DATE</div>
+                  <div className="border border-gray-300 px-4 py-2">
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="date"
+                          className="w-full focus:outline-none border-0 p-0 shadow-none"
                         />
                       )}
                     />
@@ -168,130 +255,137 @@ const NewPica: React.FC = () => {
                   <thead>
                     <tr>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Pica ID</th>
-                      <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Date</th>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Issue</th>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Problem Identification</th>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Corrective Action (Task)</th>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">PIC</th>
                       <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Due Date</th>
+                      <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="bg-gray-100">
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="picaId"
-                          render={({ field }) => (
-                            <Input
-                              {...field}
-                              className="w-full bg-transparent border-0 p-0 shadow-none"
-                              readOnly
-                            />
+                    {fields.map((field, index) => (
+                      <tr key={field.id} className={index % 2 === 0 ? "bg-gray-100" : "bg-white"}>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          {masterPicaId && (
+                            <div className="font-medium">{generatePicaId(masterPicaId, field.sequence)}</div>
                           )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="date"
-                          render={({ field }) => (
-                            <Input
-                              {...field}
-                              type="date"
-                              className="w-full bg-transparent border-0 p-0 shadow-none"
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="issue"
-                          render={({ field }) => (
-                            <Input
-                              {...field}
-                              className="w-full bg-transparent border-0 p-0 shadow-none"
-                              placeholder="Enter issue"
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="problemIdentification"
-                          render={({ field }) => (
-                            <Textarea
-                              {...field}
-                              className="w-full bg-transparent border-0 p-0 shadow-none resize-none"
-                              placeholder="Enter problem"
-                              rows={1}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="correctiveAction"
-                          render={({ field }) => (
-                            <Textarea
-                              {...field}
-                              className="w-full bg-transparent border-0 p-0 shadow-none resize-none"
-                              placeholder="Enter corrective action"
-                              rows={1}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="personInChargeId"
-                          render={({ field }) => (
-                            <Select
-                              disabled={peopleLoading}
-                              value={field.value.toString()}
-                              onValueChange={(value) => field.onChange(parseInt(value))}
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          <FormField
+                            control={form.control}
+                            name={`picaItems.${index}.issue`}
+                            render={({ field }) => (
+                              <Input
+                                {...field}
+                                className="w-full bg-transparent border-0 p-0 shadow-none"
+                                placeholder="Enter issue"
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          <FormField
+                            control={form.control}
+                            name={`picaItems.${index}.problemIdentification`}
+                            render={({ field }) => (
+                              <Textarea
+                                {...field}
+                                className="w-full bg-transparent border-0 p-0 shadow-none resize-none"
+                                placeholder="Enter problem"
+                                rows={1}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          <FormField
+                            control={form.control}
+                            name={`picaItems.${index}.correctiveAction`}
+                            render={({ field }) => (
+                              <Textarea
+                                {...field}
+                                className="w-full bg-transparent border-0 p-0 shadow-none resize-none"
+                                placeholder="Enter corrective action"
+                                rows={1}
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          <FormField
+                            control={form.control}
+                            name={`picaItems.${index}.personInChargeId`}
+                            render={({ field }) => (
+                              <Select
+                                disabled={peopleLoading}
+                                value={field.value.toString()}
+                                onValueChange={(value) => field.onChange(parseInt(value))}
+                              >
+                                <SelectTrigger className="w-full bg-transparent border-0 p-0 shadow-none">
+                                  <SelectValue placeholder="Select PIC" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {people?.map((person: any) => (
+                                    <SelectItem key={person.id} value={person.id.toString()}>
+                                      {person.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          <FormField
+                            control={form.control}
+                            name={`picaItems.${index}.dueDate`}
+                            render={({ field }) => (
+                              <Input
+                                {...field}
+                                type="date"
+                                className="w-full bg-transparent border-0 p-0 shadow-none"
+                              />
+                            )}
+                          />
+                        </td>
+                        <td className="py-2 px-4 border-b border-gray-300 text-sm">
+                          {fields.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => remove(index)}
+                              className="text-red-600 hover:text-red-800 p-0"
                             >
-                              <SelectTrigger className="w-full bg-transparent border-0 p-0 shadow-none">
-                                <SelectValue placeholder="Select PIC" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {people?.map((person: any) => (
-                                  <SelectItem key={person.id} value={person.id.toString()}>
-                                    {person.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              <Trash2 size={18} />
+                            </Button>
                           )}
-                        />
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300 text-sm">
-                        <FormField
-                          control={form.control}
-                          name="dueDate"
-                          render={({ field }) => (
-                            <Input
-                              {...field}
-                              type="date"
-                              className="w-full bg-transparent border-0 p-0 shadow-none"
-                            />
-                          )}
-                        />
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="mt-4 mb-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddPicaItem}
+                  className="flex items-center"
+                  disabled={!selectedProjectSite}
+                >
+                  <Plus size={18} className="mr-2" />
+                  Add Another PICA Item
+                </Button>
               </div>
 
               <div className="mt-6 flex justify-end">
                 <Button
                   type="submit"
                   className="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-8 rounded"
-                  disabled={createPica.isPending}
+                  disabled={createPica.isPending || !selectedProjectSite}
                 >
                   {createPica.isPending ? "Submitting..." : "SUBMIT"}
                 </Button>
