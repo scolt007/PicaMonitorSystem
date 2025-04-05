@@ -374,55 +374,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* PICA Overview - Middle column */}
-        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
-          <h3 className="text-[11px] font-semibold mb-0.5">PICA Overview</h3>
-          <div className="flex flex-col">
-            <div className="w-full flex items-center justify-center">
-              {statsLoading ? (
-                <Skeleton className="w-[100px] h-[100px] rounded-full" />
-              ) : (
-                <PieChart
-                  data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
-                  labels={["Progress", "Complete", "Overdue"]}
-                  colors={["#2563eb", "#22c55e", "#ef4444"]}
-                />
-              )}
-            </div>
-            <div className="w-full mt-0.5">
-              <div className="text-[9px] mt-0.5 space-y-0.5">
-                <div className="flex justify-between">
-                  <div className="flex items-center font-medium">
-                    <div className="inline-block w-2 h-2 bg-primary mr-1"></div>
-                    Progress:
-                  </div>
-                  <div className="font-semibold">{calcFilteredStats.progress}</div>
-                </div>
-                <div className="flex justify-between">
-                  <div className="flex items-center font-medium">
-                    <div className="inline-block w-2 h-2 bg-green-500 mr-1"></div>
-                    Complete:
-                  </div>
-                  <div className="font-semibold">{calcFilteredStats.complete}</div>
-                </div>
-                <div className="flex justify-between">
-                  <div className="flex items-center font-medium">
-                    <div className="inline-block w-2 h-2 bg-red-500 mr-1"></div>
-                    Overdue:
-                  </div>
-                  <div className="font-semibold">{calcFilteredStats.overdue}</div>
-                </div>
-                <div className="flex justify-between">
-                  <div className="font-medium">Total:</div>
-                  <div className="font-semibold">{calcFilteredStats.total}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Department PICA Chart - Right columns */}
-        <div className="col-span-6 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
+        {/* Department PICA Chart - Full width */}
+        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
           <div className="flex justify-between items-center mb-0.5">
             <h3 className="text-[11px] font-semibold">Department PICA Summary</h3>
             <div className="flex flex-wrap items-center text-[8px] gap-0.5">
