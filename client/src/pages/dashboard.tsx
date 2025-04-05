@@ -16,9 +16,15 @@ import { Input } from "@/components/ui/input";
 const Dashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [dateRange, setDateRange] = useState({ 
-    start: format(new Date(), "yyyy-MM-dd"),
-    end: format(new Date(), "yyyy-MM-dd")
+  // Set default date range from beginning of current month to today
+  const [dateRange, setDateRange] = useState(() => { 
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    return {
+      start: format(startOfMonth, "yyyy-MM-dd"),
+      end: format(today, "yyyy-MM-dd")
+    };
   });
 
   // Fetch PICA statistics
