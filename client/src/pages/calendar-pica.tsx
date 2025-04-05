@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { addMonths, subMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, parseISO } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import * as HoverCard from '@radix-ui/react-hover-card';
 import { PicaWithRelations } from "@shared/schema";
+import { formatDate } from "@/lib/utils";
 
 const CalendarPica: React.FC = () => {
   // Set default date range from beginning of current month to today
@@ -116,6 +118,39 @@ const CalendarPica: React.FC = () => {
            picaDate.getMonth() === day.getMonth() && 
            picaDate.getFullYear() === day.getFullYear();
   };
+  
+  // Get background color based on PICA status and whether it's the creation or due date
+  const getPicaBackgroundColor = (pica: PicaWithRelations, day: Date) => {
+    const isCreationDay = isPicaCreated(pica, day);
+    
+    if (isCreationDay) {
+      return "bg-yellow-300 text-black"; // Creation date is always yellow
+    } else {
+      // For due date, color based on status
+      switch (pica.status) {
+        case 'complete':
+          return "bg-green-500 text-white";
+        case 'overdue':
+          return "bg-red-500 text-white";
+        case 'progress':
+        default:
+          return "bg-blue-500 text-white";
+      }
+    }
+  };
+  
+  // Get the appropriate icon based on PICA status
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'overdue':
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'progress':
+      default:
+        return <Clock className="w-4 h-4 text-blue-500" />;
+    }
+  };
 
   return (
     <div>
@@ -158,9 +193,18 @@ const CalendarPica: React.FC = () => {
           </div>
 
           {/* Legend */}
-          <div className="bg-blue-100 p-3 flex items-center space-x-4">
-            <div className="bg-yellow-300 text-xs font-medium px-2 py-1">PICA CREATED</div>
-            <div className="bg-teal-700 text-white text-xs font-medium px-2 py-1">PICA DUE DATE</div>
+          <div className="bg-blue-100 p-3 flex flex-wrap items-center gap-2">
+            <div className="bg-yellow-300 text-xs font-medium px-2 py-1 rounded">PICA CREATED</div>
+            <div className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
+              <Clock className="w-3 h-3" /> PROGRESS
+            </div>
+            <div className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> COMPLETE
+            </div>
+            <div className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> OVERDUE
+            </div>
+            <div className="text-xs font-medium ml-auto">Hover over any PICA to see details</div>
           </div>
 
           {/* Calendar Grid */}
@@ -196,16 +240,39 @@ const CalendarPica: React.FC = () => {
                       {format(day, "d")}
                     </div>
                     {dayPicas.map((pica) => (
-                      <div 
-                        key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}
-                        className={`mt-1 text-xs p-1 ${
-                          isPicaCreated(pica, day) 
-                            ? "bg-yellow-300" 
-                            : "bg-teal-700 text-white"
-                        }`}
-                      >
-                        {pica.picaId}
-                      </div>
+                      <HoverCard.Root key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}>
+                        <HoverCard.Trigger asChild>
+                          <div 
+                            className={`mt-1 text-xs p-1 cursor-pointer rounded ${getPicaBackgroundColor(pica, day)}`}
+                          >
+                            {pica.picaId}
+                          </div>
+                        </HoverCard.Trigger>
+                        <HoverCard.Content 
+                          className="bg-white p-3 rounded-md shadow-lg border border-gray-200 w-64 z-50"
+                          sideOffset={5}
+                        >
+                          <div className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold">{pica.picaId}</span>
+                              <span className="flex items-center gap-1">
+                                {getStatusIcon(pica.status)}
+                                <span className="capitalize text-xs">{pica.status}</span>
+                              </span>
+                            </div>
+                            <div className="text-xs">
+                              <div><strong>Issue:</strong> {pica.issue}</div>
+                              <div><strong>Problem:</strong> {pica.problemIdentification}</div>
+                              <div><strong>Action:</strong> {pica.correctiveAction}</div>
+                              <div><strong>Created:</strong> {formatDate(pica.date)}</div>
+                              <div><strong>Due:</strong> {formatDate(pica.dueDate)}</div>
+                              <div><strong>Project:</strong> {pica.projectSite?.name || 'Unknown'}</div>
+                              <div><strong>PIC:</strong> {pica.personInCharge?.name || 'Unknown'}</div>
+                            </div>
+                          </div>
+                          <HoverCard.Arrow className="fill-white" />
+                        </HoverCard.Content>
+                      </HoverCard.Root>
                     ))}
                   </div>
                 );

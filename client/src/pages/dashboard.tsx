@@ -10,8 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { PicaWithRelations } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import * as HoverCard from '@radix-ui/react-hover-card';
 
 const Dashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -101,6 +102,39 @@ const Dashboard: React.FC = () => {
     return picaDate.getDate() === day.getDate() && 
            picaDate.getMonth() === day.getMonth() && 
            picaDate.getFullYear() === day.getFullYear();
+  };
+  
+  // Get background color based on PICA status and whether it's the creation or due date
+  const getPicaBackgroundColor = (pica: any, day: Date) => {
+    const isCreationDay = isPicaCreated(pica, day);
+    
+    if (isCreationDay) {
+      return "bg-yellow-300 text-black"; // Creation date is always yellow
+    } else {
+      // For due date, color based on status
+      switch (pica.status) {
+        case 'complete':
+          return "bg-green-500 text-white";
+        case 'overdue':
+          return "bg-red-500 text-white";
+        case 'progress':
+        default:
+          return "bg-blue-500 text-white";
+      }
+    }
+  };
+  
+  // Get the appropriate icon based on PICA status
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'overdue':
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'progress':
+      default:
+        return <Clock className="w-4 h-4 text-blue-500" />;
+    }
   };
 
   // Handle date range change
@@ -446,7 +480,15 @@ const Dashboard: React.FC = () => {
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
               <div className="bg-yellow-300 text-xs font-medium px-2 py-0.5 rounded">PICA CREATED</div>
-              <div className="bg-teal-700 text-white text-xs font-medium px-2 py-0.5 rounded">PICA DUE DATE</div>
+              <div className="bg-blue-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                <Clock className="w-3 h-3" /> PROGRESS
+              </div>
+              <div className="bg-green-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> COMPLETE
+              </div>
+              <div className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> OVERDUE
+              </div>
             </div>
 
             {/* Calendar Grid */}
@@ -484,16 +526,37 @@ const Dashboard: React.FC = () => {
                       {dayPicas.length > 0 && (
                         <div className="mt-1 overflow-hidden">
                           {dayPicas.slice(0, 2).map((pica: any) => (
-                            <div 
-                              key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}
-                              className={`mt-0.5 text-[0.65rem] leading-tight truncate p-0.5 ${
-                                isPicaCreated(pica, day) 
-                                  ? "bg-yellow-300" 
-                                  : "bg-teal-700 text-white"
-                              }`}
-                            >
-                              {pica.picaId}
-                            </div>
+                            <HoverCard.Root key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}>
+                              <HoverCard.Trigger asChild>
+                                <div 
+                                  className={`mt-0.5 text-[0.65rem] leading-tight truncate p-0.5 cursor-pointer rounded ${getPicaBackgroundColor(pica, day)}`}
+                                >
+                                  {pica.picaId}
+                                </div>
+                              </HoverCard.Trigger>
+                              <HoverCard.Content 
+                                className="bg-white p-2 rounded-md shadow-lg border border-gray-200 w-60 z-50"
+                                sideOffset={5}
+                              >
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold text-xs">{pica.picaId}</span>
+                                    <span className="flex items-center gap-1">
+                                      {getStatusIcon(pica.status)}
+                                      <span className="capitalize text-[10px]">{pica.status}</span>
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px]">
+                                    <div><strong>Issue:</strong> {pica.issue}</div>
+                                    <div><strong>Created:</strong> {formatDate(pica.date)}</div>
+                                    <div><strong>Due:</strong> {formatDate(pica.dueDate)}</div>
+                                    <div><strong>Project:</strong> {pica.projectSite?.name || 'Unknown'}</div>
+                                    <div><strong>PIC:</strong> {pica.personInCharge?.name || 'Unknown'}</div>
+                                  </div>
+                                </div>
+                                <HoverCard.Arrow className="fill-white" />
+                              </HoverCard.Content>
+                            </HoverCard.Root>
                           ))}
                           {dayPicas.length > 2 && (
                             <div className="text-[0.6rem] text-gray-500 truncate">+{dayPicas.length - 2} more</div>
