@@ -10,9 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { PicaWithRelations } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle, Clock, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import * as HoverCard from '@radix-ui/react-hover-card';
+import { Link } from "wouter";
 
 const Dashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -579,16 +580,58 @@ const Dashboard: React.FC = () => {
             <h2 className="text-base font-medium text-gray-800">
               Person In Charge Monitor
             </h2>
-            <PicaFilterButtons
-              activeFilter={activeFilter}
-              onFilterChange={(filter) => setActiveFilter(filter)}
-            />
+            <div className="flex gap-2">
+              <Button 
+                variant={activeFilter === "all" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveFilter("all")}
+                className="text-xs h-8"
+              >
+                All
+              </Button>
+              <Button 
+                variant={activeFilter === "progress" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveFilter("progress")}
+                className="text-xs h-8"
+              >
+                Progress
+              </Button>
+              <Button 
+                variant={activeFilter === "complete" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveFilter("complete")}
+                className="text-xs h-8"
+              >
+                Complete
+              </Button>
+              <Button 
+                variant={activeFilter === "overdue" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setActiveFilter("overdue")}
+                className="text-xs h-8"
+              >
+                Overdue
+              </Button>
+            </div>
           </div>
           <div className="p-3">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-primary">
                   <tr>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Create Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Issue
+                    </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
@@ -605,12 +648,6 @@ const Dashboard: React.FC = () => {
                       scope="col"
                       className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
-                      Created
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
-                    >
                       Due Date
                     </th>
                     <th
@@ -618,6 +655,12 @@ const Dashboard: React.FC = () => {
                       className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Action
                     </th>
                   </tr>
                 </thead>
@@ -628,19 +671,25 @@ const Dashboard: React.FC = () => {
                       .map((_, i) => (
                         <tr key={i}>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-full h-4" />
+                            <Skeleton className="w-24 h-4" />
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-28 h-4" />
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-40 h-4" />
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             <Skeleton className="w-16 h-4" />
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-20 h-4" />
+                            <Skeleton className="w-24 h-4" />
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             <Skeleton className="w-20 h-4" />
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-20 h-4" />
+                            <Skeleton className="w-16 h-4" />
                           </td>
                         </tr>
                       ))
@@ -649,15 +698,20 @@ const Dashboard: React.FC = () => {
                     filteredPicas.slice(0, 5).map((pica) => (
                       <tr key={pica.id}>
                         <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
-                          {pica.correctiveAction.length > 50 
-                            ? `${pica.correctiveAction.substring(0, 50)}...` 
+                          {pica.date ? format(new Date(pica.date), 'dd MMM yyyy') : '-'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.issue.length > 30 
+                            ? `${pica.issue.substring(0, 30)}...` 
+                            : pica.issue}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.correctiveAction.length > 40 
+                            ? `${pica.correctiveAction.substring(0, 40)}...` 
                             : pica.correctiveAction}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
                           {pica.personInCharge?.name}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
-                          {pica.date ? format(new Date(pica.date), 'dd MMM yyyy') : '-'}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
                           {pica.dueDate ? format(new Date(pica.dueDate), 'dd MMM yyyy') : '-'}
@@ -665,12 +719,23 @@ const Dashboard: React.FC = () => {
                         <td className="px-3 py-2 whitespace-nowrap text-xs">
                           <StatusBadge status={pica.status} />
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs">
+                          <Link href={`/pica-progress?picaId=${pica.picaId}`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         className="px-3 py-2 text-center text-xs text-gray-500"
                       >
                         No PICAs found
