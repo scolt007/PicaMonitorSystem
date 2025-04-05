@@ -397,52 +397,49 @@ const Dashboard: React.FC = () => {
 
       {/* Calendar and Project Site Chart Row */}
       <div className="grid grid-cols-12 gap-1 mt-1 mb-1">
-        {/* Project Site PICA Chart - Left Column */}
+        {/* Project Site Summary - Left Column */}
         <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-2">
-          <div className="flex justify-between items-center mb-1">
+          <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs font-semibold">Project Site Summary</h3>
           </div>
           {siteStatsLoading ? (
             <Skeleton className="w-full h-[100px]" />
           ) : (
-            <div className="h-[100px]">
-              <BarChart
-                labels={calcFilteredSiteStats.map(s => s.site)}
-                datasets={[
-                  {
-                    label: "Progress",
-                    data: calcFilteredSiteStats.map(s => s.progress),
-                    backgroundColor: "#2563eb",
-                  },
-                  {
-                    label: "Complete",
-                    data: calcFilteredSiteStats.map(s => s.complete),
-                    backgroundColor: "#22c55e",
-                  },
-                  {
-                    label: "Overdue",
-                    data: calcFilteredSiteStats.map(s => s.overdue),
-                    backgroundColor: "#ef4444",
-                  },
-                ]}
-                maxY={8}
-              />
+            <div className="overflow-hidden">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b">
+                    <th className="text-[10px] font-medium text-gray-700 py-1 px-2 text-left">Site</th>
+                    <th className="text-[10px] font-medium text-blue-600 py-1 px-2 text-center">Progress</th>
+                    <th className="text-[10px] font-medium text-green-600 py-1 px-2 text-center">Complete</th>
+                    <th className="text-[10px] font-medium text-red-600 py-1 px-2 text-center">Overdue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calcFilteredSiteStats.map((site, index) => (
+                    <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="text-[9px] font-medium text-gray-800 py-1 px-2">{site.site}</td>
+                      <td className="text-[9px] font-medium text-blue-600 py-1 px-2 text-center">
+                        <span className="inline-block bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">
+                          {site.progress}
+                        </span>
+                      </td>
+                      <td className="text-[9px] font-medium text-green-600 py-1 px-2 text-center">
+                        <span className="inline-block bg-green-100 text-green-700 rounded-full px-2 py-0.5">
+                          {site.complete}
+                        </span>
+                      </td>
+                      <td className="text-[9px] font-medium text-red-600 py-1 px-2 text-center">
+                        <span className="inline-block bg-red-100 text-red-700 rounded-full px-2 py-0.5">
+                          {site.overdue}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-          <div className="flex flex-wrap items-center text-[9px] gap-1 mt-1">
-            <div className="flex items-center mr-1">
-              <div className="w-2 h-2 bg-primary rounded-sm mr-0.5"></div>
-              <span>Progress</span>
-            </div>
-            <div className="flex items-center mr-1">
-              <div className="w-2 h-2 bg-green-500 rounded-sm mr-0.5"></div>
-              <span>Complete</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-red-500 rounded-sm mr-0.5"></div>
-              <span>Overdue</span>
-            </div>
-          </div>
         </div>
 
         {/* Calendar - Right Column */}
