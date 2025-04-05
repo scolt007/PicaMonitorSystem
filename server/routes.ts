@@ -107,9 +107,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
-      // Extract comment from the request if present
-      const { comment, ...restData } = req.body;
-      const picaData = insertPicaSchema.partial().parse(restData);
+      // Extract comment and updateDate from the request if present
+      const { comment, updateDate, ...restData } = req.body;
+      
+      // Create a copy of the data to be updated
+      let picaData = { ...insertPicaSchema.partial().parse(restData) };
+      
+      // If updateDate is provided, use it to set the updatedAt field
+      if (updateDate) {
+        picaData.updatedAt = new Date(updateDate);
+      } else {
+        // Otherwise use current date (this is already handled by the storage layer)
+        picaData.updatedAt = new Date();
+      }
       
       // Pass the history comment if provided
       const updatedPica = await storage.updatePica(id, picaData, comment);
@@ -120,6 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedPica);
     } catch (error) {
+      console.error("Error updating PICA:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid PICA data", errors: error.errors });
       }

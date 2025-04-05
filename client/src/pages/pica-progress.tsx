@@ -102,6 +102,7 @@ const PicaProgress: React.FC = () => {
     correctiveAction: z.string().min(1, "Required"),
     personInChargeId: z.number().min(1, "Required"),
     dueDate: z.string().min(1, "Required"),
+    updateDate: z.string().min(1, "Required"),
     status: z.string().min(1, "Required"),
     comment: z.string().optional(),
   });
@@ -115,6 +116,7 @@ const PicaProgress: React.FC = () => {
       correctiveAction: "",
       personInChargeId: 0,
       dueDate: "",
+      updateDate: new Date().toISOString().split('T')[0], // Default to today
       status: "",
       comment: "",
     },
@@ -191,6 +193,7 @@ const PicaProgress: React.FC = () => {
       correctiveAction: pica.correctiveAction,
       personInChargeId: pica.personInChargeId,
       dueDate: pica.dueDate.split('T')[0], // Format date to YYYY-MM-DD
+      updateDate: new Date().toISOString().split('T')[0], // Current date as update date
       status: pica.status,
       comment: "",
     });
@@ -424,6 +427,19 @@ const PicaProgress: React.FC = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Due Date</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="updateDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Update Date</FormLabel>
                         <FormControl>
                           <Input {...field} type="date" />
                         </FormControl>
