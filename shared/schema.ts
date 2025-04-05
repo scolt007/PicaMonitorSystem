@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, date, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, date, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Person In Charge
 export const people = pgTable("people", {
@@ -10,26 +11,12 @@ export const people = pgTable("people", {
   departmentId: integer("department_id"),
 });
 
-export const insertPersonSchema = createInsertSchema(people).omit({
-  id: true,
-});
-
-export type InsertPerson = z.infer<typeof insertPersonSchema>;
-export type Person = typeof people.$inferSelect;
-
 // Department
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   headId: integer("head_id"),
 });
-
-export const insertDepartmentSchema = createInsertSchema(departments).omit({
-  id: true,
-});
-
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
-export type Department = typeof departments.$inferSelect;
 
 // Project Site
 export const projectSites = pgTable("project_sites", {
@@ -39,13 +26,6 @@ export const projectSites = pgTable("project_sites", {
   location: text("location"),
   managerId: integer("manager_id"),
 });
-
-export const insertProjectSiteSchema = createInsertSchema(projectSites).omit({
-  id: true,
-});
-
-export type InsertProjectSite = z.infer<typeof insertProjectSiteSchema>;
-export type ProjectSite = typeof projectSites.$inferSelect;
 
 // PICA Status enum
 export const picaStatusEnum = z.enum(["progress", "complete", "overdue"]);
@@ -66,6 +46,73 @@ export const picas = pgTable("picas", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Users (optional, for authentication)
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+// Relations
+export const peopleRelations = relations(people, ({ one, many }) => ({
+  department: one(departments, {
+    fields: [people.departmentId],
+    references: [departments.id],
+  }),
+  managedProjectSites: many(projectSites),
+  picasInCharge: many(picas, { relationName: "pica_person" }),
+}));
+
+export const departmentsRelations = relations(departments, ({ one, many }) => ({
+  head: one(people, {
+    fields: [departments.headId],
+    references: [people.id],
+  }),
+  members: many(people),
+}));
+
+export const projectSitesRelations = relations(projectSites, ({ one, many }) => ({
+  manager: one(people, {
+    fields: [projectSites.managerId],
+    references: [people.id],
+  }),
+  picas: many(picas),
+}));
+
+export const picasRelations = relations(picas, ({ one }) => ({
+  projectSite: one(projectSites, {
+    fields: [picas.projectSiteId],
+    references: [projectSites.id],
+  }),
+  personInCharge: one(people, {
+    fields: [picas.personInChargeId],
+    references: [people.id],
+    relationName: "pica_person",
+  }),
+}));
+
+// Insert schemas and types
+export const insertPersonSchema = createInsertSchema(people).omit({
+  id: true,
+});
+
+export type InsertPerson = z.infer<typeof insertPersonSchema>;
+export type Person = typeof people.$inferSelect;
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+});
+
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type Department = typeof departments.$inferSelect;
+
+export const insertProjectSiteSchema = createInsertSchema(projectSites).omit({
+  id: true,
+});
+
+export type InsertProjectSite = z.infer<typeof insertProjectSiteSchema>;
+export type ProjectSite = typeof projectSites.$inferSelect;
+
 export const insertPicaSchema = createInsertSchema(picas).omit({
   id: true,
   createdAt: true,
@@ -79,13 +126,6 @@ export type PicaWithRelations = Pica & {
   projectSite: ProjectSite;
   personInCharge: Person;
 };
-
-// Users (optional, for authentication)
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,

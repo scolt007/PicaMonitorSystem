@@ -16,6 +16,8 @@ import {
   type InsertUser,
   type PicaWithRelations
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 
 // Storage interface
 export interface IStorage {
@@ -60,214 +62,135 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 }
 
-// In-memory storage implementation
-export class MemStorage implements IStorage {
-  private people: Map<number, Person>;
-  private departments: Map<number, Department>;
-  private projectSites: Map<number, ProjectSite>;
-  private picas: Map<number, Pica>;
-  private users: Map<number, User>;
-  
-  private personId: number;
-  private departmentId: number;
-  private projectSiteId: number;
-  private picaId: number;
-  private userId: number;
-
-  constructor() {
-    this.people = new Map();
-    this.departments = new Map();
-    this.projectSites = new Map();
-    this.picas = new Map();
-    this.users = new Map();
-    
-    this.personId = 1;
-    this.departmentId = 1;
-    this.projectSiteId = 1;
-    this.picaId = 1;
-    this.userId = 1;
-
-    // Initialize with some data
-    this.seedData();
-  }
-
-  // Seed some initial data
-  private seedData() {
-    // Create departments
-    const scmDept = this.createDepartment({ name: "SCM", headId: null });
-    const hcgsDept = this.createDepartment({ name: "HCGS", headId: null });
-    const financeDept = this.createDepartment({ name: "Finance", headId: null });
-
-    // Create people
-    const andy = this.createPerson({ name: "Andy", email: "andy@example.com", departmentId: scmDept.id });
-    const arie = this.createPerson({ name: "Arie", email: "arie@example.com", departmentId: hcgsDept.id });
-    const boy = this.createPerson({ name: "Boy", email: "boy@example.com", departmentId: hcgsDept.id });
-    const susi = this.createPerson({ name: "Susi", email: "susi@example.com", departmentId: financeDept.id });
-    
-    // Update department heads
-    this.updateDepartment(scmDept.id, { headId: andy.id });
-    this.updateDepartment(hcgsDept.id, { headId: arie.id });
-    this.updateDepartment(financeDept.id, { headId: susi.id });
-
-    // Create project sites
-    const npmSite = this.createProjectSite({ code: "KMP-NPR", name: "Kamp Nampurior", location: "West Papua", managerId: andy.id });
-    const bekbSite = this.createProjectSite({ code: "KMP-BEKB", name: "Kamp Bekubai", location: "East Kalimantan", managerId: arie.id });
-    const tbsSite = this.createProjectSite({ code: "KMP-TBS", name: "Kamp Tabas", location: "South Sumatra", managerId: boy.id });
-    const ibpSite = this.createProjectSite({ code: "KMP-IBP", name: "Kamp Ibupura", location: "Papua", managerId: susi.id });
-
-    // Create PICA entries
-    const baseDate = new Date('2025-04-05');
-    
-    this.createPica({
-      picaId: "2504NPR01",
-      projectSiteId: npmSite.id,
-      date: baseDate,
-      issue: "KZ-51 Breakdown",
-      problemIdentification: "Kerusakan Pada Cross Joint",
-      correctiveAction: "Ordering DZ-51 Sparepart to PT. Mitsubishi Motor Indonesia",
-      personInChargeId: andy.id,
-      dueDate: new Date('2025-04-07'),
-      status: "progress"
-    });
-
-    this.createPica({
-      picaId: "2504NPR02",
-      projectSiteId: npmSite.id,
-      date: baseDate,
-      issue: "KX-72",
-      problemIdentification: "Kerusakan Pada Pedal Gas",
-      correctiveAction: "Delivering KX-72 Sparepart",
-      personInChargeId: arie.id,
-      dueDate: new Date('2025-04-06'),
-      status: "complete"
-    });
-
-    this.createPica({
-      picaId: "2504NPR03",
-      projectSiteId: npmSite.id,
-      date: baseDate,
-      issue: "NO Operator",
-      problemIdentification: "Operator tidak tersedia",
-      correctiveAction: "Send New Hire Operator to site KMP-NPR",
-      personInChargeId: boy.id,
-      dueDate: new Date('2025-04-08'),
-      status: "overdue"
-    });
-
-    this.createPica({
-      picaId: "2504NPR04",
-      projectSiteId: npmSite.id,
-      date: baseDate,
-      issue: "KX-74 Payment",
-      problemIdentification: "Pending Payment",
-      correctiveAction: "Processing Payment to spare part order KX-74",
-      personInChargeId: susi.id,
-      dueDate: new Date('2025-04-09'),
-      status: "progress"
-    });
-  }
-
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
   // People methods
   async getAllPeople(): Promise<Person[]> {
-    return Array.from(this.people.values());
+    return await db.select().from(people);
   }
 
   async getPerson(id: number): Promise<Person | undefined> {
-    return this.people.get(id);
+    const [person] = await db.select().from(people).where(eq(people.id, id));
+    return person || undefined;
   }
 
   async createPerson(person: InsertPerson): Promise<Person> {
-    const id = this.personId++;
-    const newPerson: Person = { ...person, id };
-    this.people.set(id, newPerson);
+    const [newPerson] = await db
+      .insert(people)
+      .values(person)
+      .returning();
     return newPerson;
   }
 
   async updatePerson(id: number, person: Partial<InsertPerson>): Promise<Person | undefined> {
-    const existingPerson = this.people.get(id);
-    if (!existingPerson) return undefined;
-    
-    const updatedPerson: Person = { ...existingPerson, ...person };
-    this.people.set(id, updatedPerson);
-    return updatedPerson;
+    const [updatedPerson] = await db
+      .update(people)
+      .set(person)
+      .where(eq(people.id, id))
+      .returning();
+    return updatedPerson || undefined;
   }
 
   async deletePerson(id: number): Promise<boolean> {
-    return this.people.delete(id);
+    const result = await db
+      .delete(people)
+      .where(eq(people.id, id))
+      .returning({ id: people.id });
+    return result.length > 0;
   }
 
   // Department methods
   async getAllDepartments(): Promise<Department[]> {
-    return Array.from(this.departments.values());
+    return await db.select().from(departments);
   }
 
   async getDepartment(id: number): Promise<Department | undefined> {
-    return this.departments.get(id);
+    const [department] = await db.select().from(departments).where(eq(departments.id, id));
+    return department || undefined;
   }
 
   async createDepartment(department: InsertDepartment): Promise<Department> {
-    const id = this.departmentId++;
-    const newDepartment: Department = { ...department, id };
-    this.departments.set(id, newDepartment);
+    const [newDepartment] = await db
+      .insert(departments)
+      .values(department)
+      .returning();
     return newDepartment;
   }
 
   async updateDepartment(id: number, department: Partial<InsertDepartment>): Promise<Department | undefined> {
-    const existingDepartment = this.departments.get(id);
-    if (!existingDepartment) return undefined;
-    
-    const updatedDepartment: Department = { ...existingDepartment, ...department };
-    this.departments.set(id, updatedDepartment);
-    return updatedDepartment;
+    const [updatedDepartment] = await db
+      .update(departments)
+      .set(department)
+      .where(eq(departments.id, id))
+      .returning();
+    return updatedDepartment || undefined;
   }
 
   async deleteDepartment(id: number): Promise<boolean> {
-    return this.departments.delete(id);
+    const result = await db
+      .delete(departments)
+      .where(eq(departments.id, id))
+      .returning({ id: departments.id });
+    return result.length > 0;
   }
 
   // Project site methods
   async getAllProjectSites(): Promise<ProjectSite[]> {
-    return Array.from(this.projectSites.values());
+    return await db.select().from(projectSites);
   }
 
   async getProjectSite(id: number): Promise<ProjectSite | undefined> {
-    return this.projectSites.get(id);
+    const [projectSite] = await db.select().from(projectSites).where(eq(projectSites.id, id));
+    return projectSite || undefined;
   }
 
   async getProjectSiteByCode(code: string): Promise<ProjectSite | undefined> {
-    return Array.from(this.projectSites.values()).find(site => site.code === code);
+    const [projectSite] = await db
+      .select()
+      .from(projectSites)
+      .where(eq(projectSites.code, code));
+    return projectSite || undefined;
   }
 
   async createProjectSite(projectSite: InsertProjectSite): Promise<ProjectSite> {
-    const id = this.projectSiteId++;
-    const newProjectSite: ProjectSite = { ...projectSite, id };
-    this.projectSites.set(id, newProjectSite);
+    const [newProjectSite] = await db
+      .insert(projectSites)
+      .values(projectSite)
+      .returning();
     return newProjectSite;
   }
 
   async updateProjectSite(id: number, projectSite: Partial<InsertProjectSite>): Promise<ProjectSite | undefined> {
-    const existingProjectSite = this.projectSites.get(id);
-    if (!existingProjectSite) return undefined;
-    
-    const updatedProjectSite: ProjectSite = { ...existingProjectSite, ...projectSite };
-    this.projectSites.set(id, updatedProjectSite);
-    return updatedProjectSite;
+    const [updatedProjectSite] = await db
+      .update(projectSites)
+      .set(projectSite)
+      .where(eq(projectSites.id, id))
+      .returning();
+    return updatedProjectSite || undefined;
   }
 
   async deleteProjectSite(id: number): Promise<boolean> {
-    return this.projectSites.delete(id);
+    const result = await db
+      .delete(projectSites)
+      .where(eq(projectSites.id, id))
+      .returning({ id: projectSites.id });
+    return result.length > 0;
   }
 
   // PICA methods
   async getAllPicas(): Promise<Pica[]> {
-    return Array.from(this.picas.values());
+    return await db
+      .select()
+      .from(picas)
+      .orderBy(desc(picas.createdAt));
   }
 
   async getPicasWithRelations(): Promise<PicaWithRelations[]> {
-    const picas = await this.getAllPicas();
     const result: PicaWithRelations[] = [];
     
-    for (const pica of picas) {
+    const allPicas = await this.getAllPicas();
+    
+    for (const pica of allPicas) {
       const projectSite = await this.getProjectSite(pica.projectSiteId);
       const personInCharge = await this.getPerson(pica.personInChargeId);
       
@@ -284,108 +207,206 @@ export class MemStorage implements IStorage {
   }
 
   async getPica(id: number): Promise<Pica | undefined> {
-    return this.picas.get(id);
+    const [pica] = await db.select().from(picas).where(eq(picas.id, id));
+    return pica || undefined;
   }
 
   async getPicaByPicaId(picaId: string): Promise<Pica | undefined> {
-    return Array.from(this.picas.values()).find(pica => pica.picaId === picaId);
+    const [pica] = await db
+      .select()
+      .from(picas)
+      .where(eq(picas.picaId, picaId));
+    return pica || undefined;
   }
 
   async createPica(pica: InsertPica): Promise<Pica> {
-    const id = this.picaId++;
-    const now = new Date();
-    const newPica: Pica = { ...pica, id, createdAt: now };
-    this.picas.set(id, newPica);
+    const [newPica] = await db
+      .insert(picas)
+      .values(pica)
+      .returning();
     return newPica;
   }
 
   async updatePica(id: number, pica: Partial<InsertPica>): Promise<Pica | undefined> {
-    const existingPica = this.picas.get(id);
-    if (!existingPica) return undefined;
-    
-    const updatedPica: Pica = { ...existingPica, ...pica };
-    this.picas.set(id, updatedPica);
-    return updatedPica;
+    const [updatedPica] = await db
+      .update(picas)
+      .set(pica)
+      .where(eq(picas.id, id))
+      .returning();
+    return updatedPica || undefined;
   }
 
   async deletePica(id: number): Promise<boolean> {
-    return this.picas.delete(id);
+    const result = await db
+      .delete(picas)
+      .where(eq(picas.id, id))
+      .returning({ id: picas.id });
+    return result.length > 0;
   }
 
   async getPicasByStatus(status: string): Promise<Pica[]> {
-    return Array.from(this.picas.values()).filter(pica => pica.status === status);
+    return await db
+      .select()
+      .from(picas)
+      .where(eq(picas.status, status))
+      .orderBy(desc(picas.createdAt));
   }
 
   async countPicasByStatus(): Promise<{ progress: number; complete: number; overdue: number; total: number }> {
-    const allPicas = await this.getAllPicas();
-    const progressCount = allPicas.filter(pica => pica.status === "progress").length;
-    const completeCount = allPicas.filter(pica => pica.status === "complete").length;
-    const overdueCount = allPicas.filter(pica => pica.status === "overdue").length;
+    const progressCount = await db
+      .select({ count: count() })
+      .from(picas)
+      .where(eq(picas.status, "progress"));
+    
+    const completeCount = await db
+      .select({ count: count() })
+      .from(picas)
+      .where(eq(picas.status, "complete"));
+    
+    const overdueCount = await db
+      .select({ count: count() })
+      .from(picas)
+      .where(eq(picas.status, "overdue"));
+    
+    const totalCount = await db
+      .select({ count: count() })
+      .from(picas);
     
     return {
-      progress: progressCount,
-      complete: completeCount,
-      overdue: overdueCount,
-      total: allPicas.length
+      progress: progressCount[0].count,
+      complete: completeCount[0].count,
+      overdue: overdueCount[0].count,
+      total: totalCount[0].count
     };
   }
 
   async countPicasByDepartment(): Promise<any[]> {
-    const allPicas = await this.getPicasWithRelations();
-    const departments = await this.getAllDepartments();
     const result = [];
-
-    for (const department of departments) {
-      const departmentPics = allPicas.filter(pica => 
-        pica.personInCharge.departmentId === department.id
-      );
+    const allDepartments = await this.getAllDepartments();
+    
+    for (const department of allDepartments) {
+      const departmentPeople = await db
+        .select()
+        .from(people)
+        .where(eq(people.departmentId, department.id));
+      
+      const peopleIds = departmentPeople.map(person => person.id);
+      
+      const progressCount = peopleIds.length > 0 
+        ? await db
+            .select({ count: count() })
+            .from(picas)
+            .where(
+              and(
+                eq(picas.status, "progress"),
+                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+              )
+            )
+        : [{ count: 0 }];
+      
+      const completeCount = peopleIds.length > 0
+        ? await db
+            .select({ count: count() })
+            .from(picas)
+            .where(
+              and(
+                eq(picas.status, "complete"),
+                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+              )
+            )
+        : [{ count: 0 }];
+      
+      const overdueCount = peopleIds.length > 0
+        ? await db
+            .select({ count: count() })
+            .from(picas)
+            .where(
+              and(
+                eq(picas.status, "overdue"),
+                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+              )
+            )
+        : [{ count: 0 }];
       
       result.push({
         department: department.name,
-        progress: departmentPics.filter(pica => pica.status === "progress").length,
-        complete: departmentPics.filter(pica => pica.status === "complete").length,
-        overdue: departmentPics.filter(pica => pica.status === "overdue").length
+        progress: progressCount[0].count,
+        complete: completeCount[0].count,
+        overdue: overdueCount[0].count
       });
     }
-
+    
     return result;
   }
 
   async countPicasByProjectSite(): Promise<any[]> {
-    const allPicas = await this.getPicasWithRelations();
-    const sites = await this.getAllProjectSites();
     const result = [];
-
-    for (const site of sites) {
-      const sitePicas = allPicas.filter(pica => pica.projectSiteId === site.id);
+    const allProjectSites = await this.getAllProjectSites();
+    
+    for (const site of allProjectSites) {
+      const progressCount = await db
+        .select({ count: count() })
+        .from(picas)
+        .where(
+          and(
+            eq(picas.status, "progress"),
+            eq(picas.projectSiteId, site.id)
+          )
+        );
+      
+      const completeCount = await db
+        .select({ count: count() })
+        .from(picas)
+        .where(
+          and(
+            eq(picas.status, "complete"),
+            eq(picas.projectSiteId, site.id)
+          )
+        );
+      
+      const overdueCount = await db
+        .select({ count: count() })
+        .from(picas)
+        .where(
+          and(
+            eq(picas.status, "overdue"),
+            eq(picas.projectSiteId, site.id)
+          )
+        );
       
       result.push({
         site: site.code,
-        progress: sitePicas.filter(pica => pica.status === "progress").length,
-        complete: sitePicas.filter(pica => pica.status === "complete").length,
-        overdue: sitePicas.filter(pica => pica.status === "overdue").length
+        progress: progressCount[0].count,
+        complete: completeCount[0].count,
+        overdue: overdueCount[0].count
       });
     }
-
+    
     return result;
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const id = this.userId++;
-    const newUser: User = { ...user, id };
-    this.users.set(id, newUser);
+    const [newUser] = await db
+      .insert(users)
+      .values(user)
+      .returning();
     return newUser;
   }
 }
 
 // Create and export storage instance
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
