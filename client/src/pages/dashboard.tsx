@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 
 const Dashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
   // Set default date range from beginning of current month to today
   const [dateRange, setDateRange] = useState(() => { 
     const today = new Date();
@@ -25,6 +25,11 @@ const Dashboard: React.FC = () => {
       start: format(startOfMonth, "yyyy-MM-dd"),
       end: format(today, "yyyy-MM-dd")
     };
+  });
+  
+  // Initialize calendar month to match the start date of the filter
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    return new Date(dateRange.start);
   });
 
   // Fetch PICA statistics
@@ -104,6 +109,11 @@ const Dashboard: React.FC = () => {
       ...prev,
       [field]: value
     }));
+    
+    // When the start date changes, update the calendar month to match
+    if (field === 'start' && value) {
+      setCurrentMonth(new Date(value));
+    }
   };
 
   // Calculate statistics based on filtered PICAs
@@ -156,18 +166,34 @@ const Dashboard: React.FC = () => {
     const deptMap: Record<string, { department: string, progress: number, complete: number, overdue: number }> = {};
     
     // Initialize with existing departments
-    deptStats.forEach((dept: any) => {
-      deptMap[dept.department] = { 
-        department: dept.department, 
-        progress: 0, 
-        complete: 0, 
-        overdue: 0 
-      };
-    });
+    if (Array.isArray(deptStats)) {
+      deptStats.forEach((dept: any) => {
+        deptMap[dept.department] = { 
+          department: dept.department, 
+          progress: 0, 
+          complete: 0, 
+          overdue: 0 
+        };
+      });
+    }
     
     // Count PICAs by department and status
     filtered.forEach(pica => {
-      const deptName = pica.personInCharge?.department?.name || 'Unknown';
+      // Need to handle the relationship properly by looking up department info from the personInCharge
+      let deptName = 'Unknown';
+      
+      if (pica.personInCharge) {
+        // First, get the department ID from the person
+        const deptId = pica.personInCharge.departmentId;
+        
+        // Find the department from the relevant array if available
+        if (deptId && Array.isArray(deptStats)) {
+          const dept = deptStats.find((d: any) => d.id === deptId);
+          if (dept && dept.name) {
+            deptName = dept.name;
+          }
+        }
+      }
       
       if (!deptMap[deptName]) {
         deptMap[deptName] = { department: deptName, progress: 0, complete: 0, overdue: 0 };
@@ -202,14 +228,16 @@ const Dashboard: React.FC = () => {
     const siteMap: Record<string, { site: string, progress: number, complete: number, overdue: number }> = {};
     
     // Initialize with existing sites
-    siteStats.forEach((site: any) => {
-      siteMap[site.site] = { 
-        site: site.site, 
-        progress: 0, 
-        complete: 0, 
-        overdue: 0 
-      };
-    });
+    if (Array.isArray(siteStats)) {
+      siteStats.forEach((site: any) => {
+        siteMap[site.site] = { 
+          site: site.site, 
+          progress: 0, 
+          complete: 0, 
+          overdue: 0 
+        };
+      });
+    }
     
     // Count PICAs by site and status
     filtered.forEach(pica => {

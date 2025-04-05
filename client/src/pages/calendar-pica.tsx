@@ -3,14 +3,30 @@ import { useQuery } from "@tanstack/react-query";
 import { addMonths, subMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, parseISO } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { PicaWithRelations } from "@shared/schema";
 
 const CalendarPica: React.FC = () => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Set default date range from beginning of current month to today
+  const [dateRange, setDateRange] = useState(() => { 
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    return {
+      start: format(startOfMonth, "yyyy-MM-dd"),
+      end: format(today, "yyyy-MM-dd")
+    };
+  });
+  
+  // Initialize calendar month to match the start date of the filter
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    return new Date(dateRange.start);
+  });
   
   // Fetch PICAs
-  const { data: picas, isLoading } = useQuery({
+  const { data: picas, isLoading } = useQuery<PicaWithRelations[]>({
     queryKey: ["/api/picas"],
   });
 
@@ -32,18 +48,54 @@ const CalendarPica: React.FC = () => {
   // Get day of week for the first day (0 = Sunday, 1 = Monday, etc.)
   const startDay = getDay(monthStart);
   
-  // Filter PICAs for current month
-  const picasInMonth = picas?.filter((pica: any) => {
-    const picaDate = parseISO(pica.date);
-    const picaDueDate = parseISO(pica.dueDate);
-    return isSameMonth(picaDate, currentMonth) || isSameMonth(picaDueDate, currentMonth);
-  });
+  // Handle date range change
+  const handleDateChange = (field: 'start' | 'end', value: string) => {
+    setDateRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // When the start date changes, update the calendar month to match
+    if (field === 'start' && value) {
+      setCurrentMonth(new Date(value));
+    }
+  };
+  
+  // Filter PICAs by date range
+  const filteredPicas = React.useMemo(() => {
+    if (!picas) return [];
+    
+    // If both dates are set, filter by date range
+    if (dateRange.start && dateRange.end) {
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end day
+      
+      return picas.filter((pica) => {
+        const picaDate = new Date(pica.date);
+        return picaDate >= startDate && picaDate <= endDate;
+      });
+    }
+    
+    return picas;
+  }, [picas, dateRange]);
+  
+  // Filter PICAs for current month from the filtered list
+  const picasInMonth = React.useMemo(() => {
+    if (!filteredPicas) return [];
+    
+    return filteredPicas.filter((pica) => {
+      const picaDate = parseISO(pica.date);
+      const picaDueDate = parseISO(pica.dueDate);
+      return isSameMonth(picaDate, currentMonth) || isSameMonth(picaDueDate, currentMonth);
+    });
+  }, [filteredPicas, currentMonth]);
 
   // Get PICAs for a specific day
   const getPicasForDay = (day: Date) => {
     if (!picasInMonth) return [];
     
-    return picasInMonth.filter((pica: any) => {
+    return picasInMonth.filter((pica) => {
       const picaDate = parseISO(pica.date);
       const picaDueDate = parseISO(pica.dueDate);
       
@@ -58,7 +110,7 @@ const CalendarPica: React.FC = () => {
   };
 
   // Determine if a PICA is created or due on a specific day
-  const isPicaCreated = (pica: any, day: Date) => {
+  const isPicaCreated = (pica: PicaWithRelations, day: Date) => {
     const picaDate = parseISO(pica.date);
     return picaDate.getDate() === day.getDate() && 
            picaDate.getMonth() === day.getMonth() && 
@@ -67,8 +119,29 @@ const CalendarPica: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <h1 className="text-2xl font-semibold text-gray-800">CALENDAR PICA</h1>
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="text-sm text-gray-700 font-medium flex items-center">
+            <Calendar className="mr-2 h-4 w-4" />
+            <span>FILTER DATE:</span>
+          </div>
+          <div className="flex space-x-2">
+            <Input 
+              type="date" 
+              value={dateRange.start}
+              onChange={(e) => handleDateChange('start', e.target.value)}
+              className="h-9 w-36"
+            />
+            <span className="flex items-center">to</span>
+            <Input 
+              type="date" 
+              value={dateRange.end}
+              onChange={(e) => handleDateChange('end', e.target.value)}
+              className="h-9 w-36"
+            />
+          </div>
+        </div>
       </div>
 
       <Card className="overflow-hidden">
@@ -122,7 +195,7 @@ const CalendarPica: React.FC = () => {
                     <div className={`text-sm ${isToday(day) ? "bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center" : day.getDay() === 0 || day.getDay() === 6 ? "text-red-600 font-medium" : "font-medium"}`}>
                       {format(day, "d")}
                     </div>
-                    {dayPicas.map((pica: any) => (
+                    {dayPicas.map((pica) => (
                       <div 
                         key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}
                         className={`mt-1 text-xs p-1 ${
