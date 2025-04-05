@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PicaWithRelations } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
@@ -17,10 +17,12 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import PicaFilterButtons from "@/components/PicaFilterButtons";
 import StatusBadge from "@/components/StatusBadge";
+import { Search } from "lucide-react";
 
 const PicaProgress: React.FC = () => {
   const { toast } = useToast();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -28,7 +30,7 @@ const PicaProgress: React.FC = () => {
   const itemsPerPage = 10;
 
   // Fetch PICAs
-  const { data: allPicas, isLoading } = useQuery<PicaWithRelations[]>({
+  const { data: allPicas, isLoading, refetch } = useQuery<PicaWithRelations[]>({
     queryKey: ["/api/picas"],
   });
 
@@ -37,12 +39,47 @@ const PicaProgress: React.FC = () => {
     queryKey: ["/api/people"],
   });
 
-  // Filter PICAs based on the active filter
+  // Set up a periodic refresh to check for status updates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, 300000); // Refresh every 5 minutes (300000 ms)
+    
+    return () => clearInterval(intervalId);
+  }, [refetch]);
+
+  // Filter PICAs based on the active filter and search query
   const filteredPicas = React.useMemo(() => {
     if (!allPicas) return [];
-    if (activeFilter === "all") return allPicas;
-    return allPicas.filter((pica) => pica.status === activeFilter);
-  }, [allPicas, activeFilter]);
+    
+    let filtered = allPicas;
+    
+    // First apply status filter
+    if (activeFilter !== "all") {
+      filtered = filtered.filter((pica) => pica.status === activeFilter);
+    }
+    
+    // Then apply search filter if a search query exists
+    if (searchQuery.trim()) {
+      const lowerQuery = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((pica) => 
+        pica.picaId.toLowerCase().includes(lowerQuery) ||
+        pica.issue.toLowerCase().includes(lowerQuery) ||
+        pica.correctiveAction.toLowerCase().includes(lowerQuery) ||
+        pica.problemIdentification.toLowerCase().includes(lowerQuery) ||
+        pica.projectSite.code.toLowerCase().includes(lowerQuery) ||
+        pica.projectSite.name.toLowerCase().includes(lowerQuery) ||
+        pica.personInCharge.name.toLowerCase().includes(lowerQuery)
+      );
+    }
+    
+    return filtered;
+  }, [allPicas, activeFilter, searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery]);
 
   // Paginate PICAs
   const paginatedPicas = React.useMemo(() => {
@@ -77,7 +114,11 @@ const PicaProgress: React.FC = () => {
   // Handle filter change
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
-    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  // Handle search change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   // Handle page change
@@ -164,11 +205,24 @@ const PicaProgress: React.FC = () => {
 
       <Card className="shadow">
         <CardContent className="p-6">
-          <div className="mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <PicaFilterButtons
               activeFilter={activeFilter}
               onFilterChange={handleFilterChange}
             />
+            
+            <div className="relative w-full md:w-auto">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <Input
+                type="text"
+                placeholder="Search PICA..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="pl-10 pr-4 py-2 w-full md:w-64"
+              />
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -243,7 +297,7 @@ const PicaProgress: React.FC = () => {
                   // Show no data message
                   <tr>
                     <td colSpan={9} className="py-4 text-center text-sm text-gray-500">
-                      No PICA records found
+                      {searchQuery ? "No matching PICA records found" : "No PICA records found"}
                     </td>
                   </tr>
                 )}

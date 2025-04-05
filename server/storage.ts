@@ -189,18 +189,41 @@ export class DatabaseStorage implements IStorage {
     const result: PicaWithRelations[] = [];
     
     const allPicas = await this.getAllPicas();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
+    
+    // Check for overdue PICAs and update their status
+    const picasToUpdate: { id: number, status: string }[] = [];
     
     for (const pica of allPicas) {
       const projectSite = await this.getProjectSite(pica.projectSiteId);
       const personInCharge = await this.getPerson(pica.personInChargeId);
       
       if (projectSite && personInCharge) {
+        // Check if the PICA is overdue (dueDate < today and status is not complete)
+        const dueDate = new Date(pica.dueDate);
+        dueDate.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
+        
+        let currentStatus = pica.status;
+        
+        // Only update status to overdue if it's in progress and the due date has passed
+        if (dueDate < today && pica.status === "progress") {
+          currentStatus = "overdue";
+          picasToUpdate.push({ id: pica.id, status: "overdue" });
+        }
+        
         result.push({
           ...pica,
+          status: currentStatus, // Use the updated status
           projectSite,
           personInCharge
         });
       }
+    }
+    
+    // Batch update the status of overdue PICAs in the database
+    for (const picaUpdate of picasToUpdate) {
+      await this.updatePica(picaUpdate.id, { status: picaUpdate.status });
     }
     
     return result;
