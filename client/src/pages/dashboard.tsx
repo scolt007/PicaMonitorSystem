@@ -610,13 +610,13 @@ const Dashboard: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider w-[80px]"
                   >
                     PICA ID
                   </th>
                   <th
                     scope="col"
-                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider w-[80px]"
                   >
                     Date
                   </th>
@@ -628,13 +628,13 @@ const Dashboard: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider w-[200px]"
                   >
                     Task
                   </th>
                   <th
                     scope="col"
-                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-xs font-medium text-white uppercase tracking-wider w-[100px]"
                   >
                     PIC
                   </th>
@@ -700,15 +700,11 @@ const Dashboard: React.FC = () => {
                       <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
                         {pica.date ? format(new Date(pica.date), 'dd/MM/yy') : '-'}
                       </td>
-                      <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
-                        {pica.issue && pica.issue.length > 25 
-                          ? `${pica.issue.substring(0, 25)}...` 
-                          : pica.issue}
+                      <td className="px-2 py-1 text-xs text-gray-800">
+                        {pica.issue}
                       </td>
-                      <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
-                        {pica.correctiveAction && pica.correctiveAction.length > 25
-                          ? `${pica.correctiveAction.substring(0, 25)}...` 
-                          : pica.correctiveAction}
+                      <td className="px-2 py-1 text-xs text-gray-800">
+                        {pica.correctiveAction}
                       </td>
                       <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
                         {pica.personInCharge?.name}
