@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { addMonths, subMonths, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, parseISO } from "date-fns";
 import PieChart from "@/components/charts/PieChart";
 import BarChart from "@/components/charts/BarChart";
 import PicaFilterButtons from "@/components/PicaFilterButtons";
@@ -8,9 +9,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { PicaWithRelations } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const Dashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [dateRange, setDateRange] = useState({ 
+    start: format(new Date(), "yyyy-MM-dd"),
+    end: format(new Date(), "yyyy-MM-dd")
+  });
 
   // Fetch PICA statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -32,19 +41,115 @@ const Dashboard: React.FC = () => {
     queryKey: ["/api/picas"],
   });
 
-  // Filter PICAs by status
+  // Go to previous month for calendar
+  const prevMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+  };
+
+  // Go to next month for calendar
+  const nextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
+  // Get days in month for calendar
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  
+  // Get day of week for the first day (0 = Sunday, 1 = Monday, etc.)
+  const startDay = getDay(monthStart);
+  
+  // Filter PICAs for current month
+  const picasInMonth = picas?.filter((pica: any) => {
+    const picaDate = parseISO(pica.date);
+    const picaDueDate = parseISO(pica.dueDate);
+    return isSameMonth(picaDate, currentMonth) || isSameMonth(picaDueDate, currentMonth);
+  });
+
+  // Get PICAs for a specific day
+  const getPicasForDay = (day: Date) => {
+    if (!picasInMonth) return [];
+    
+    return picasInMonth.filter((pica: any) => {
+      const picaDate = parseISO(pica.date);
+      const picaDueDate = parseISO(pica.dueDate);
+      
+      const isSameDay = (date1: Date, date2: Date) => {
+        return date1.getDate() === date2.getDate() && 
+               date1.getMonth() === date2.getMonth() && 
+               date1.getFullYear() === date2.getFullYear();
+      };
+      
+      return isSameDay(picaDate, day) || isSameDay(picaDueDate, day);
+    });
+  };
+
+  // Determine if a PICA is created or due on a specific day
+  const isPicaCreated = (pica: any, day: Date) => {
+    const picaDate = parseISO(pica.date);
+    return picaDate.getDate() === day.getDate() && 
+           picaDate.getMonth() === day.getMonth() && 
+           picaDate.getFullYear() === day.getFullYear();
+  };
+
+  // Handle date range change
+  const handleDateChange = (field: 'start' | 'end', value: string) => {
+    setDateRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Filter PICAs by status and date range
   const filteredPicas = React.useMemo(() => {
     if (!picas) return [];
-    if (activeFilter === "all") return picas;
-    return picas.filter((pica) => pica.status === activeFilter);
-  }, [picas, activeFilter]);
+    
+    let filtered = picas;
+    
+    // Filter by status
+    if (activeFilter !== "all") {
+      filtered = filtered.filter((pica) => pica.status === activeFilter);
+    }
+    
+    // Filter by date range if both dates are set
+    if (dateRange.start && dateRange.end) {
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end day
+      
+      filtered = filtered.filter((pica) => {
+        const picaDate = new Date(pica.date);
+        return picaDate >= startDate && picaDate <= endDate;
+      });
+    }
+    
+    return filtered;
+  }, [picas, activeFilter, dateRange]);
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <h1 className="text-2xl font-semibold text-gray-800">Dashboard PICA</h1>
-        <div className="text-sm text-gray-700 font-medium">
-          FILTER : CUSTOM RANGE
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="text-sm text-gray-700 font-medium flex items-center">
+            <Calendar className="mr-2 h-4 w-4" />
+            <span>FILTER DATE:</span>
+          </div>
+          <div className="flex space-x-2">
+            <Input 
+              type="date" 
+              value={dateRange.start}
+              onChange={(e) => handleDateChange('start', e.target.value)}
+              className="h-9 w-36"
+            />
+            <span className="flex items-center">to</span>
+            <Input 
+              type="date" 
+              value={dateRange.end}
+              onChange={(e) => handleDateChange('end', e.target.value)}
+              className="h-9 w-36"
+            />
+          </div>
         </div>
       </div>
 
@@ -169,235 +274,178 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Yearly Calendar Planning */}
+        {/* Calendar PICA */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-lg font-medium mb-3">Yearly Calendar Planning</h3>
-            <p className="text-xs text-gray-500 mb-2">Keep your content concise and relevant</p>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xs">
-                <thead>
-                  <tr>
-                    <th className="py-2 px-1 bg-gray-100">Tasks</th>
-                    <th className="py-2 px-1 bg-gray-100">01</th>
-                    <th className="py-2 px-1 bg-gray-100">02</th>
-                    <th className="py-2 px-1 bg-gray-100">03</th>
-                    <th className="py-2 px-1 bg-gray-100">04</th>
-                    <th className="py-2 px-1 bg-gray-100">05</th>
-                    <th className="py-2 px-1 bg-gray-100">06</th>
-                    <th className="py-2 px-1 bg-gray-100">07</th>
-                    <th className="py-2 px-1 bg-gray-100">08</th>
-                    <th className="py-2 px-1 bg-gray-100">09</th>
-                    <th className="py-2 px-1 bg-gray-100">10</th>
-                    <th className="py-2 px-1 bg-gray-100">11</th>
-                    <th className="py-2 px-1 bg-gray-100">12</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="py-1 px-1 bg-red-600 text-white font-medium">Task 01</td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1"></td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 px-1 bg-red-600 text-white font-medium">Task 02</td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1 bg-red-500"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 px-1 bg-orange-500 text-white font-medium">Task 03</td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-orange-400"></td>
-                    <td className="py-1 px-1 bg-orange-400"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-orange-400"></td>
-                    <td className="py-1 px-1 bg-orange-400"></td>
-                    <td className="py-1 px-1 bg-orange-400"></td>
-                    <td className="py-1 px-1"></td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 px-1 bg-gray-500 text-white font-medium">Task 04</td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                    <td className="py-1 px-1 bg-gray-400"></td>
-                  </tr>
-                </tbody>
-              </table>
+            {/* Calendar Header */}
+            <div className="bg-primary text-white p-2 flex justify-between items-center rounded-md mb-2">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={prevMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h2 className="text-base font-medium">{format(currentMonth, "MMMM yyyy")}</h2>
+              <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={nextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="mt-3 flex text-xs">
-              <div className="flex items-center mr-3">
-                <div className="w-3 h-3 bg-red-600 mr-1"></div>
-                <span>Done</span>
-              </div>
-              <div className="flex items-center mr-3">
-                <div className="w-3 h-3 bg-orange-400 mr-1"></div>
-                <span>In Progress</span>
-              </div>
-              <div className="flex items-center mr-3">
-                <div className="w-3 h-3 bg-gray-400 mr-1"></div>
-                <span>Planned</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 border border-gray-300 mr-1"></div>
-                <span>Not Yet</span>
-              </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+              <div className="bg-yellow-300 text-xs font-medium px-2 py-0.5 rounded">PICA CREATED</div>
+              <div className="bg-teal-700 text-white text-xs font-medium px-2 py-0.5 rounded">PICA DUE DATE</div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {/* Days of week header */}
+              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                <div key={day} className="text-center font-medium text-xs py-1">
+                  {day}
+                </div>
+              ))}
+
+              {/* Empty cells for days before month start */}
+              {Array.from({ length: startDay }).map((_, index) => (
+                <div key={`empty-${index}`}></div>
+              ))}
+
+              {/* Actual calendar days */}
+              {picasLoading ? (
+                // Show skeleton while loading
+                Array.from({ length: daysInMonth.length }).map((_, index) => (
+                  <div key={`skeleton-${index}`} className="border border-gray-200 min-h-[55px] p-1">
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                    <Skeleton className="h-4 w-full mt-1" />
+                  </div>
+                ))
+              ) : (
+                // Show actual calendar days
+                daysInMonth.map((day) => {
+                  const dayPicas = getPicasForDay(day);
+                  return (
+                    <div key={day.toISOString()} className="border border-gray-200 min-h-[55px] p-1">
+                      <div className={`text-xs ${isToday(day) ? "bg-primary text-white rounded-full w-4 h-4 flex items-center justify-center" : day.getDay() === 0 || day.getDay() === 6 ? "text-red-600 font-medium" : "font-medium"}`}>
+                        {format(day, "d")}
+                      </div>
+                      {dayPicas.length > 0 && (
+                        <div className="mt-1 overflow-hidden">
+                          {dayPicas.slice(0, 2).map((pica: any) => (
+                            <div 
+                              key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}
+                              className={`mt-0.5 text-[0.65rem] leading-tight truncate p-0.5 ${
+                                isPicaCreated(pica, day) 
+                                  ? "bg-yellow-300" 
+                                  : "bg-teal-700 text-white"
+                              }`}
+                            >
+                              {pica.picaId}
+                            </div>
+                          ))}
+                          {dayPicas.length > 2 && (
+                            <div className="text-[0.6rem] text-gray-500 truncate">+{dayPicas.length - 2} more</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Person In Charge Monitor */}
-      <div className="mt-6 bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50">
-          <h2 className="text-lg font-medium text-gray-800">
-            Person In Charge Monitor
-          </h2>
-        </div>
-        <div className="p-4">
-          <PicaFilterButtons
-            activeFilter={activeFilter}
-            onFilterChange={(filter) => setActiveFilter(filter)}
-          />
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-primary">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
-                  >
-                    Task Progress
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
-                  >
-                    PIC
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
-                  >
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {picasLoading ? (
-                  Array(4)
-                    .fill(0)
-                    .map((_, i) => (
-                      <tr key={i}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Skeleton className="w-full h-5" />
+      <Card className="mt-6">
+        <CardContent className="p-0">
+          <div className="p-3 bg-gray-50 border-b flex justify-between items-center">
+            <h2 className="text-base font-medium text-gray-800">
+              Person In Charge Monitor
+            </h2>
+            <PicaFilterButtons
+              activeFilter={activeFilter}
+              onFilterChange={(filter) => setActiveFilter(filter)}
+            />
+          </div>
+          <div className="p-3">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-primary">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Task Progress
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      PIC
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {picasLoading ? (
+                    Array(3)
+                      .fill(0)
+                      .map((_, i) => (
+                        <tr key={i}>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-full h-4" />
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-16 h-4" />
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-20 h-4" />
+                          </td>
+                        </tr>
+                      ))
+                  ) : filteredPicas.length > 0 ? (
+                    // Only show first 5 items to keep it compact
+                    filteredPicas.slice(0, 5).map((pica) => (
+                      <tr key={pica.id}>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.correctiveAction.length > 50 
+                            ? `${pica.correctiveAction.substring(0, 50)}...` 
+                            : pica.correctiveAction}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Skeleton className="w-16 h-5" />
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.personInCharge?.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Skeleton className="w-20 h-5" />
+                        <td className="px-3 py-2 whitespace-nowrap text-xs">
+                          <StatusBadge status={pica.status} />
                         </td>
                       </tr>
                     ))
-                ) : filteredPicas.length > 0 ? (
-                  filteredPicas.map((pica) => (
-                    <tr key={pica.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                        {pica.correctiveAction}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                        {pica.personInCharge?.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <StatusBadge status={pica.status} />
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="px-3 py-2 text-center text-xs text-gray-500"
+                      >
+                        No PICAs found
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-6 py-4 text-center text-sm text-gray-500"
-                    >
-                      No PICAs found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {filteredPicas.length > 5 && (
+              <div className="text-center text-xs text-gray-500 mt-2">
+                Showing 5 of {filteredPicas.length} items
+              </div>
+            )}
           </div>
-          <div className="mt-4 flex justify-center">
-            <nav className="flex items-center space-x-1 text-sm">
-              <a href="#" className="px-2 py-1 text-gray-500">
-                Previous
-              </a>
-              <a href="#" className="px-2 py-1 bg-primary text-white rounded">
-                1
-              </a>
-              <a
-                href="#"
-                className="px-2 py-1 text-gray-700 hover:bg-gray-100 rounded"
-              >
-                2
-              </a>
-              <a
-                href="#"
-                className="px-2 py-1 text-gray-700 hover:bg-gray-100 rounded"
-              >
-                3
-              </a>
-              <a
-                href="#"
-                className="px-2 py-1 text-gray-700 hover:bg-gray-100 rounded"
-              >
-                4
-              </a>
-              <a
-                href="#"
-                className="px-2 py-1 text-gray-700 hover:bg-gray-100 rounded"
-              >
-                5
-              </a>
-              <a href="#" className="px-2 py-1 text-gray-500">
-                Next
-              </a>
-            </nav>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
