@@ -395,10 +395,58 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Calendar Row */}
+      {/* Calendar and Project Site Chart Row */}
       <div className="grid grid-cols-12 gap-1 mt-1 mb-1">
-        {/* Calendar - Full Width */}
-        <div className="col-span-12 bg-white border border-gray-100 rounded-md shadow-sm p-1">
+        {/* Project Site PICA Chart - Left Column */}
+        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1">
+          <div className="flex justify-between items-center">
+            <h3 className="text-[9px] font-semibold">Project Site Summary</h3>
+          </div>
+          {siteStatsLoading ? (
+            <Skeleton className="w-full h-[90px]" />
+          ) : (
+            <div className="h-[90px]">
+              <BarChart
+                labels={calcFilteredSiteStats.map(s => s.site)}
+                datasets={[
+                  {
+                    label: "Progress",
+                    data: calcFilteredSiteStats.map(s => s.progress),
+                    backgroundColor: "#2563eb",
+                  },
+                  {
+                    label: "Complete",
+                    data: calcFilteredSiteStats.map(s => s.complete),
+                    backgroundColor: "#22c55e",
+                  },
+                  {
+                    label: "Overdue",
+                    data: calcFilteredSiteStats.map(s => s.overdue),
+                    backgroundColor: "#ef4444",
+                  },
+                ]}
+                maxY={6}
+              />
+            </div>
+          )}
+          <div className="flex flex-wrap items-center text-[7px] gap-0.5">
+            <div className="flex items-center mr-0.5">
+              <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
+              <span>Progress</span>
+            </div>
+            <div className="flex items-center mr-0.5">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
+              <span>Complete</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
+              <span>Overdue</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar - Right Column */}
+        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1">
           {/* Calendar Header */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-0.5">
