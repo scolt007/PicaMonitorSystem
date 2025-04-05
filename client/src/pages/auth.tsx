@@ -23,6 +23,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
+  signupCode: z.string().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -56,6 +57,7 @@ const AuthPage = () => {
       password: "",
       name: "",
       email: "",
+      signupCode: "",
     },
   });
 
@@ -209,6 +211,20 @@ const AuthPage = () => {
                       />
                       {registerForm.formState.errors.password && (
                         <p className="text-sm text-red-500">{registerForm.formState.errors.password.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="signup-code" className="text-sm font-medium">Signup Code (Optional)</label>
+                      <Input
+                        id="signup-code"
+                        type="text"
+                        placeholder="Enter special code: 12345ABC04052025"
+                        {...registerForm.register("signupCode")}
+                      />
+                      <p className="text-xs text-gray-500">Enter code 12345ABC + today's date (MMDDYYYY) for admin privileges</p>
+                      {registerForm.formState.errors.signupCode && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.signupCode.message}</p>
                       )}
                     </div>
 

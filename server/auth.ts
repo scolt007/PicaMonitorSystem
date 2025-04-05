@@ -189,16 +189,33 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Username already taken" });
       }
       
+      // Check for the special code pattern 12345ABC + current date
+      const { signupCode, ...userData } = req.body;
+      const today = new Date();
+      const formattedDate = `${today.getMonth() + 1}${today.getDate().toString().padStart(2, '0')}${today.getFullYear()}`;
+      const expectedCode = `12345ABC${formattedDate}`;
+      
+      // Validate the signup code if provided
+      if (signupCode) {
+        if (signupCode !== expectedCode) {
+          return res.status(400).json({ error: "Invalid signup code" });
+        }
+        
+        // If code is valid, set role to admin
+        userData.role = "admin";
+        userData.isOrganizationAdmin = true;
+      }
+      
       // Hash the password
-      const hashedPassword = await hashPassword(req.body.password);
+      const hashedPassword = await hashPassword(userData.password);
       
       // Create the user
-      const userData = {
-        ...req.body,
+      const userToCreate = {
+        ...userData,
         password: hashedPassword,
       };
       
-      const newUser = await storage.createUser(userData);
+      const newUser = await storage.createUser(userToCreate);
       
       // Log the user in
       req.login(newUser, (err) => {
