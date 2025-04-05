@@ -275,7 +275,7 @@ const Department: React.FC = () => {
                     <FormLabel>Head of Department</FormLabel>
                     <Select
                       value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -283,7 +283,7 @@ const Department: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="null">None</SelectItem>
                         {people?.map((person) => (
                           <SelectItem key={person.id} value={person.id.toString()}>
                             {person.name}
@@ -343,7 +343,7 @@ const Department: React.FC = () => {
                     <FormLabel>Head of Department</FormLabel>
                     <Select
                       value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -351,7 +351,7 @@ const Department: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="null">None</SelectItem>
                         {people?.map((person) => (
                           <SelectItem key={person.id} value={person.id.toString()}>
                             {person.name}

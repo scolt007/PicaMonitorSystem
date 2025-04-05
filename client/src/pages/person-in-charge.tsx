@@ -296,7 +296,7 @@ const PersonInCharge: React.FC = () => {
                     <FormLabel>Department</FormLabel>
                     <Select
                       value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -304,7 +304,7 @@ const PersonInCharge: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="null">None</SelectItem>
                         {departments?.map((department) => (
                           <SelectItem key={department.id} value={department.id.toString()}>
                             {department.name}
@@ -378,7 +378,7 @@ const PersonInCharge: React.FC = () => {
                     <FormLabel>Department</FormLabel>
                     <Select
                       value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -386,7 +386,7 @@ const PersonInCharge: React.FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="null">None</SelectItem>
                         {departments?.map((department) => (
                           <SelectItem key={department.id} value={department.id.toString()}>
                             {department.name}

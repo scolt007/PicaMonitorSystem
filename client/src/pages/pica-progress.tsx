@@ -48,14 +48,12 @@ const PicaProgress: React.FC = () => {
   const paginatedPicas = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredPicas.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredPicas, currentPage]);
+  }, [filteredPicas, currentPage, itemsPerPage]);
 
-  // Total pages
-  const totalPages = React.useMemo(() => {
-    return Math.ceil(filteredPicas.length / itemsPerPage);
-  }, [filteredPicas]);
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredPicas.length / itemsPerPage);
 
-  // Edit PICA form schema
+  // Edit PICA schema
   const editPicaSchema = z.object({
     correctiveAction: z.string().min(1, "Required"),
     personInChargeId: z.number().min(1, "Required"),
@@ -76,17 +74,16 @@ const PicaProgress: React.FC = () => {
     },
   });
 
-  // Update form values when a PICA is selected for editing
-  React.useEffect(() => {
-    if (selectedPica) {
-      form.reset({
-        correctiveAction: selectedPica.correctiveAction,
-        personInChargeId: selectedPica.personInChargeId,
-        dueDate: new Date(selectedPica.dueDate).toISOString().split('T')[0],
-        status: selectedPica.status,
-      });
-    }
-  }, [selectedPica, form]);
+  // Handle filter change
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   // Update PICA mutation
   const updatePica = useMutation({
@@ -96,6 +93,7 @@ const PicaProgress: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
       toast({
         title: "Success",
         description: "PICA updated successfully",
@@ -119,6 +117,7 @@ const PicaProgress: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
       toast({
         title: "Success",
         description: "PICA deleted successfully",
@@ -137,6 +136,12 @@ const PicaProgress: React.FC = () => {
   // Handle edit button click
   const handleEdit = (pica: PicaWithRelations) => {
     setSelectedPica(pica);
+    form.reset({
+      correctiveAction: pica.correctiveAction,
+      personInChargeId: pica.personInChargeId,
+      dueDate: pica.dueDate.split('T')[0], // Format date to YYYY-MM-DD
+      status: pica.status,
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -151,77 +156,80 @@ const PicaProgress: React.FC = () => {
     updatePica.mutate(data);
   };
 
-  // Handle pagination
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">PICA PROGRESS</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">PICA Progress</h1>
       </div>
 
       <Card className="shadow">
-        <CardContent className="p-4">
-          <PicaFilterButtons
-            activeFilter={activeFilter}
-            onFilterChange={(filter) => {
-              setActiveFilter(filter);
-              setCurrentPage(1);
-            }}
-          />
+        <CardContent className="p-6">
+          <div className="mb-6">
+            <PicaFilterButtons
+              activeFilter={activeFilter}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border-collapse">
+            <table className="min-w-full bg-white">
               <thead>
                 <tr>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">PICA ID</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">PROJECT SITE</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">Task Progress</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">Due Date</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">PIC</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">Status</th>
-                  <th className="bg-primary text-white px-4 py-2 text-left text-sm font-medium">Action</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">ID</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Date</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Site</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Issue</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Corrective Action</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">PIC</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Due Date</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Status</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   // Show skeleton while loading
                   Array(5).fill(0).map((_, i) => (
-                    <tr key={i} className={i % 2 === 0 ? "bg-blue-50" : ""}>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-full" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-24" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-16" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-20" /></td>
-                      <td className="border px-4 py-3"><Skeleton className="h-5 w-20" /></td>
+                    <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-16" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-20" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-32" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-48" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-16" /></td>
                     </tr>
                   ))
                 ) : paginatedPicas.length > 0 ? (
-                  // Show PICAs
+                  // Show PICA data
                   paginatedPicas.map((pica, index) => (
-                    <tr key={pica.id} className={index % 2 === 0 ? "bg-blue-50" : ""}>
-                      <td className="border px-4 py-3 text-sm">{pica.picaId}</td>
-                      <td className="border px-4 py-3 text-sm">{pica.projectSite?.code}</td>
-                      <td className="border px-4 py-3 text-sm">{pica.correctiveAction}</td>
-                      <td className="border px-4 py-3 text-sm">{formatDate(pica.dueDate)}</td>
-                      <td className="border px-4 py-3 text-sm">{pica.personInCharge?.name}</td>
-                      <td className="border px-4 py-3 text-sm">
+                    <tr key={pica.id} className={index % 2 === 0 ? "bg-gray-50" : ""}>
+                      <td className="py-2 px-4 border-b text-sm">{pica.picaId}</td>
+                      <td className="py-2 px-4 border-b text-sm">{formatDate(pica.date)}</td>
+                      <td className="py-2 px-4 border-b text-sm">{pica.projectSite.code}</td>
+                      <td className="py-2 px-4 border-b text-sm">{pica.issue}</td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        {pica.correctiveAction.length > 50
+                          ? `${pica.correctiveAction.substring(0, 50)}...`
+                          : pica.correctiveAction}
+                      </td>
+                      <td className="py-2 px-4 border-b text-sm">{pica.personInCharge.name}</td>
+                      <td className="py-2 px-4 border-b text-sm">{formatDate(pica.dueDate)}</td>
+                      <td className="py-2 px-4 border-b text-sm">
                         <StatusBadge status={pica.status} />
                       </td>
-                      <td className="border px-4 py-3 text-sm">
+                      <td className="py-2 px-4 border-b text-sm">
                         <div className="flex space-x-2">
-                          <button 
+                          <button
                             className="text-blue-600 hover:text-blue-800"
                             onClick={() => handleEdit(pica)}
                           >
                             Edit
                           </button>
                           <span className="text-gray-300">|</span>
-                          <button 
+                          <button
                             className="text-red-600 hover:text-red-800"
                             onClick={() => handleDelete(pica)}
                           >
@@ -234,8 +242,8 @@ const PicaProgress: React.FC = () => {
                 ) : (
                   // Show no data message
                   <tr>
-                    <td colSpan={7} className="border px-4 py-3 text-sm text-center text-gray-500">
-                      No PICAs found
+                    <td colSpan={9} className="py-4 text-center text-sm text-gray-500">
+                      No PICA records found
                     </td>
                   </tr>
                 )}
@@ -244,9 +252,9 @@ const PicaProgress: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          {filteredPicas.length > 0 && (
+          {!isLoading && totalPages > 1 && (
             <div className="mt-4 flex justify-center">
-              <nav className="flex items-center space-x-1 text-sm">
+              <nav className="flex items-center space-x-2">
                 <button
                   className="px-2 py-1 text-gray-500 disabled:opacity-50"
                   onClick={() => handlePageChange(currentPage - 1)}
@@ -254,8 +262,7 @@ const PicaProgress: React.FC = () => {
                 >
                   Previous
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNumber = i + 1;
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => {
                   return (
                     <button
                       key={pageNumber}
@@ -403,8 +410,8 @@ const PicaProgress: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => deletePica.mutate()}
               disabled={deletePica.isPending}
             >
