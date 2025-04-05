@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import Logo from "../Logo";
 import { X, Menu } from "lucide-react";
@@ -42,37 +42,81 @@ const MobileMenu = () => {
     setDataSettingsOpen(true);
   }
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
+  // Close sidebar on link navigation
+  const closeMenu = () => {
+    setIsOpen(false);
   };
+
+  // Close the menu when user clicks outside of it
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (isOpen && !(e.target as Element).closest('.mobile-menu') && 
+          !(e.target as Element).closest('.mobile-menu-button')) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isOpen]);
+
+  // Prevent body scrolling when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isOpen]);
 
   return (
     <>
-      {/* Mobile Header */}
-      <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between">
-        <Logo />
-        <button onClick={toggleMenu} className="text-white p-2 rounded-lg hover:bg-slate-800">
+      {/* Hamburger Button - Always visible on mobile */}
+      <div className="fixed top-3 left-3 z-50 md:hidden">
+        <button 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="mobile-menu-button bg-slate-900 text-white p-2 rounded-lg shadow-lg hover:bg-slate-800 transition-colors"
+        >
           <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Overlay when menu is open */}
       {isOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-slate-900 overflow-y-auto">
-          <div className="flex justify-between items-center p-4 border-b border-slate-800">
-            <Logo />
-            <button onClick={toggleMenu} className="text-white p-2 rounded-lg hover:bg-slate-800">
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-          
-          <nav className="px-4 py-6 space-y-3">
+        <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={closeMenu}></div>
+      )}
+
+      {/* Mobile Sidebar */}
+      <div 
+        className={`fixed md:hidden top-0 left-0 h-full bg-slate-900 text-white z-50 mobile-menu transition-all duration-300 ease-in-out shadow-xl ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{ width: '250px' }}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-slate-800">
+          <Logo />
+          <button onClick={closeMenu} className="text-white p-2 rounded-lg hover:bg-slate-800">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto max-h-[calc(100vh-4rem)]">
+          <nav className="px-2 py-4 space-y-1">
             {navigationItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <a
-                  onClick={toggleMenu}
+                  onClick={closeMenu}
                   className={cn(
-                    "flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                    "flex items-center px-3 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out",
                     (location === item.href || (item.href === "/dashboard" && location === "/"))
                       ? "bg-primary/10 text-primary font-medium" 
                       : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -84,10 +128,10 @@ const MobileMenu = () => {
               </Link>
             ))}
 
-            <div className="mt-6 mb-2">
+            <div className="mt-4">
               <button 
                 onClick={() => setDataSettingsOpen(!dataSettingsOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-150 ease-in-out"
+                className="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-150 ease-in-out"
               >
                 <div className="flex items-center">
                   <Settings className="w-5 h-5 mr-3" />
@@ -101,13 +145,13 @@ const MobileMenu = () => {
               </button>
 
               {dataSettingsOpen && (
-                <div className="ml-4 mt-1 space-y-1 border-l border-slate-800 pl-4">
+                <div className="ml-3 mt-1 space-y-1 border-l border-slate-800 pl-3">
                   {dataSettingItems.map((item) => (
                     <Link key={item.href} href={item.href}>
                       <a
-                        onClick={toggleMenu}
+                        onClick={closeMenu}
                         className={cn(
-                          "flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                          "flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-150 ease-in-out",
                           location === item.href
                             ? "bg-primary/10 text-primary font-medium" 
                             : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -122,14 +166,14 @@ const MobileMenu = () => {
               )}
             </div>
           </nav>
-          
-          <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
-            <div className="flex items-center justify-center">
-              PICA Monitor v1.0
-            </div>
+        </div>
+        
+        <div className="absolute bottom-0 w-full p-3 border-t border-slate-800 text-xs text-slate-500">
+          <div className="flex items-center justify-center">
+            PICA Monitor v1.0
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 };
