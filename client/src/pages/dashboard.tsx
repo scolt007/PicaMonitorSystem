@@ -286,6 +286,21 @@ const Dashboard: React.FC = () => {
     return filtered;
   }, [picas, activeFilter, dateRange]);
   
+  // Calculate statistics from filtered data
+  const filteredStats = React.useMemo(() => {
+    const progress = filteredPicas.filter(pica => pica.status === "progress").length;
+    const complete = filteredPicas.filter(pica => pica.status === "complete").length;
+    const overdue = filteredPicas.filter(pica => pica.status === "overdue").length;
+    const total = filteredPicas.length;
+    
+    return {
+      progress,
+      complete,
+      overdue,
+      total
+    };
+  }, [filteredPicas]);
+
   // For table pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; // Show more items per page
@@ -329,10 +344,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
               <h3 className="text-lg font-bold text-primary mr-1">
-                {statsLoading ? (
+                {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
-                  (stats && stats.progress) || 0
+                  filteredStats.progress
                 )}
               </h3>
               <p className="text-[10px] font-medium text-gray-500">In Progress</p>
@@ -346,10 +361,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
               <h3 className="text-lg font-bold text-green-600 mr-1">
-                {statsLoading ? (
+                {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
-                  (stats && stats.complete) || 0
+                  filteredStats.complete
                 )}
               </h3>
               <p className="text-[10px] font-medium text-gray-500">Completed</p>
@@ -363,10 +378,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
               <h3 className="text-lg font-bold text-red-600 mr-1">
-                {statsLoading ? (
+                {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
-                  (stats && stats.overdue) || 0
+                  filteredStats.overdue
                 )}
               </h3>
               <p className="text-[10px] font-medium text-gray-500">Overdue</p>
@@ -380,10 +395,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
               <h3 className="text-lg font-bold text-gray-800 mr-1">
-                {statsLoading ? (
+                {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
-                  (stats && stats.total) || 0
+                  filteredStats.total
                 )}
               </h3>
               <p className="text-[10px] font-medium text-gray-500">Total PICA</p>
