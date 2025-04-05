@@ -672,9 +672,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // --- Payment Routes ---
+  // Validate promo code
+  app.post(`${apiPrefix}/validate-promo-code`, async (req, res) => {
+    try {
+      const { promoCode } = req.body;
+      
+      if (!promoCode) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: "No promo code provided" 
+        });
+      }
+      
+      // Check if promo code is valid
+      const isValid = await storage.validatePromoCode(promoCode);
+      
+      if (isValid) {
+        return res.json({ 
+          valid: true, 
+          discount: 100, // 100% discount
+          message: "Promo code applied successfully!" 
+        });
+      } else {
+        return res.json({ 
+          valid: false, 
+          message: "Invalid promo code" 
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ 
+        valid: false,
+        message: `Error validating promo code: ${error.message}` 
+      });
+    }
+  });
+
   // Create a payment intent for the one-time registration fee
   app.post(`${apiPrefix}/create-payment-intent`, async (req, res) => {
     try {
+      // Check if promo code was provided
+      const { promoCode } = req.body;
+      
+      // If promo code is valid, no payment is needed
+      if (promoCode) {
+        const isValid = await storage.validatePromoCode(promoCode);
+        if (isValid) {
+          return res.json({
+            freeRegistration: true,
+            message: "Registration is free with this promo code!",
+            amount: 0
+          });
+        }
+      }
+      
       if (!stripe) {
         return res.status(500).json({ 
           message: "Stripe is not configured. Contact administrator." 
@@ -717,14 +767,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Organization not found" });
       }
       
+      // Check if this is a promo code registration or a regular payment
+      const { promoCode, paymentIntentId } = req.body;
+      
+      // For promo code registrations
+      if (promoCode) {
+        const isValid = await storage.validatePromoCode(promoCode);
+        if (!isValid) {
+          return res.status(400).json({ 
+            success: false,
+            message: "Invalid promo code" 
+          });
+        }
+      } 
+      // For regular payments, ensure we have a payment intent ID
+      else if (!paymentIntentId && !organization.hasPaid) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Payment intent ID is required for paid registrations" 
+        });
+      }
+      
       // Update the organization payment status
-      // Note: paymentDate will be set in the backend via direct SQL as it's not in the schema
       const updatedOrganization = await storage.updateOrganization(id, {
         hasPaid: true,
-        subscriptionActive: true
+        subscriptionActive: true,
+        promoCode: promoCode || null
       });
-      
-      // Update payment date directly via SQL if needed (this would be implemented in the storage layer)
       
       res.json({ 
         success: true, 
@@ -737,29 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Validate a promo code
-  app.post(`${apiPrefix}/validate-promo-code`, async (req, res) => {
-    try {
-      const { promoCode } = req.body;
-      
-      if (!promoCode) {
-        return res.status(400).json({ 
-          message: "No promo code provided" 
-        });
-      }
-      
-      const isValid = await storage.validatePromoCode(promoCode);
-      
-      res.json({ 
-        valid: isValid,
-        message: isValid ? "Promo code is valid" : "Invalid promo code"
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        message: `Error validating promo code: ${error.message}` 
-      });
-    }
-  });
+
 
   // Create HTTP server
   const httpServer = createServer(app);

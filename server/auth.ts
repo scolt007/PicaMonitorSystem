@@ -190,10 +190,12 @@ export function setupAuth(app: Express) {
       }
       
       // Check for the special code pattern 12345ABC + current date
-      const { signupCode, ...userData } = req.body;
+      const { signupCode, organizationName, ...userData } = req.body;
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}${today.getDate().toString().padStart(2, '0')}${today.getFullYear()}`;
       const expectedCode = `12345ABC${formattedDate}`;
+      
+      let organizationId = null;
       
       // Validate the signup code if provided
       if (signupCode) {
@@ -204,6 +206,17 @@ export function setupAuth(app: Express) {
         // If code is valid, set role to admin
         userData.role = "admin";
         userData.isOrganizationAdmin = true;
+        
+        // Create a new organization if a name is provided
+        if (organizationName) {
+          const newOrg = await storage.createOrganization({
+            name: organizationName,
+            hasPaid: false,
+            subscriptionActive: false
+          });
+          
+          organizationId = newOrg.id;
+        }
       }
       
       // Hash the password
@@ -213,6 +226,7 @@ export function setupAuth(app: Express) {
       const userToCreate = {
         ...userData,
         password: hashedPassword,
+        organizationId
       };
       
       const newUser = await storage.createUser(userToCreate);

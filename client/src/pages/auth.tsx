@@ -24,6 +24,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
   signupCode: z.string().optional(),
+  organizationName: z.string().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -58,6 +59,7 @@ const AuthPage = () => {
       name: "",
       email: "",
       signupCode: "",
+      organizationName: "",
     },
   });
 
@@ -225,6 +227,20 @@ const AuthPage = () => {
                       <p className="text-xs text-gray-500">Enter code 12345ABC + today's date (MMDDYYYY) for admin privileges</p>
                       {registerForm.formState.errors.signupCode && (
                         <p className="text-sm text-red-500">{registerForm.formState.errors.signupCode.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2 organization-field" style={{ display: registerForm.watch("signupCode") ? "block" : "none" }}>
+                      <label htmlFor="organization-name" className="text-sm font-medium">Organization Name</label>
+                      <Input
+                        id="organization-name"
+                        type="text"
+                        placeholder="Enter your organization name"
+                        {...registerForm.register("organizationName")}
+                      />
+                      <p className="text-xs text-gray-500">Required when registering as an organization admin</p>
+                      {registerForm.formState.errors.organizationName && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.organizationName.message}</p>
                       )}
                     </div>
 
