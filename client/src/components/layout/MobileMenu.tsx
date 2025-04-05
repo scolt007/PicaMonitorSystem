@@ -13,7 +13,9 @@ import {
   Building,
   Settings,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  User,
+  UserCircle
 } from "lucide-react";
 
 const navigationItems = [
@@ -24,23 +26,27 @@ const navigationItems = [
 ];
 
 const dataSettingItems = [
-  { label: "Person In Charge", href: "/person-in-charge", icon: <Users className="w-5 h-5 mr-3" /> },
+  { label: "Person", href: "/person-in-charge", icon: <Users className="w-5 h-5 mr-3" /> },
   { label: "Department", href: "/department", icon: <Building2 className="w-5 h-5 mr-3" /> },
-  { label: "Project Site", href: "/project-site", icon: <Building className="w-5 h-5 mr-3" /> },
+  { label: "Project", href: "/project-site", icon: <Building className="w-5 h-5 mr-3" /> },
+  { label: "User", href: "/user", icon: <User className="w-5 h-5 mr-3" /> },
 ];
 
 const MobileMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [dataSettingsOpen, setDataSettingsOpen] = useState(false);
+  // Set data settings to be open by default
+  const [dataSettingsOpen, setDataSettingsOpen] = useState(true);
   const [location] = useLocation();
 
   // Check if current location is one of the data settings pages
   const isDataSettingsPage = dataSettingItems.some(item => item.href === location);
   
   // Automatically open the data settings dropdown if we're on one of those pages
-  if (isDataSettingsPage && !dataSettingsOpen && isOpen) {
-    setDataSettingsOpen(true);
-  }
+  useEffect(() => {
+    if (isDataSettingsPage && !dataSettingsOpen && isOpen) {
+      setDataSettingsOpen(true);
+    }
+  }, [isDataSettingsPage, dataSettingsOpen, isOpen]);
 
   // Close sidebar on link navigation
   const closeMenu = () => {
@@ -109,7 +115,7 @@ const MobileMenu = () => {
           </button>
         </div>
         
-        <div className="overflow-y-auto max-h-[calc(100vh-4rem)]">
+        <div className="overflow-y-auto h-[calc(100vh-8rem)]">
           <nav className="px-2 py-4 space-y-1">
             {navigationItems.map((item) => (
               <Link key={item.href} href={item.href}>
@@ -168,8 +174,15 @@ const MobileMenu = () => {
           </nav>
         </div>
         
-        <div className="absolute bottom-0 w-full p-3 border-t border-slate-800 text-xs text-slate-500">
-          <div className="flex items-center justify-center">
+        <div className="absolute bottom-0 w-full border-t border-slate-800">
+          {/* User Sign In and Profile section */}
+          <div className="p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+            <div className="flex items-center">
+              <UserCircle className="w-5 h-5 mr-3" />
+              <span>User Sign In / Profile</span>
+            </div>
+          </div>
+          <div className="px-3 py-2 text-xs text-slate-500 text-center">
             PICA Monitor v1.0
           </div>
         </div>

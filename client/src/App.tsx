@@ -12,6 +12,7 @@ import PicaProgress from "./pages/pica-progress";
 import PersonInCharge from "./pages/person-in-charge";
 import Department from "./pages/department";
 import ProjectSite from "./pages/project-site";
+import User from "./pages/user";
 import NotFound from "./pages/not-found";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/person-in-charge" component={PersonInCharge} />
           <Route path="/department" component={Department} />
           <Route path="/project-site" component={ProjectSite} />
+          <Route path="/user" component={User} />
           <Route component={NotFound} />
         </Switch>
       </Layout>
