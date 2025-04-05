@@ -107,8 +107,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
-      const picaData = insertPicaSchema.partial().parse(req.body);
-      const updatedPica = await storage.updatePica(id, picaData);
+      // Extract comment from the request if present
+      const { comment, ...restData } = req.body;
+      const picaData = insertPicaSchema.partial().parse(restData);
+      
+      // Pass the history comment if provided
+      const updatedPica = await storage.updatePica(id, picaData, comment);
       
       if (!updatedPica) {
         return res.status(404).json({ message: "PICA not found" });
@@ -120,6 +124,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid PICA data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to update PICA" });
+    }
+  });
+  
+  // Get PICA history
+  app.get(`${apiPrefix}/picas/:id/history`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const history = await storage.getPicaHistory(id);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve PICA history" });
     }
   });
 

@@ -53,6 +53,17 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+// PICA history table to track changes
+export const picaHistory = pgTable("pica_history", {
+  id: serial("id").primaryKey(),
+  picaId: integer("pica_id").references(() => picas.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  changeDate: timestamp("change_date").defaultNow().notNull(),
+  oldStatus: text("old_status"),
+  newStatus: text("new_status").notNull(),
+  comment: text("comment"),
+});
+
 // Relations
 export const peopleRelations = relations(people, ({ one, many }) => ({
   department: one(departments, {
@@ -79,7 +90,7 @@ export const projectSitesRelations = relations(projectSites, ({ one, many }) => 
   picas: many(picas),
 }));
 
-export const picasRelations = relations(picas, ({ one }) => ({
+export const picasRelations = relations(picas, ({ one, many }) => ({
   projectSite: one(projectSites, {
     fields: [picas.projectSiteId],
     references: [projectSites.id],
@@ -88,6 +99,18 @@ export const picasRelations = relations(picas, ({ one }) => ({
     fields: [picas.personInChargeId],
     references: [people.id],
     relationName: "pica_person",
+  }),
+  history: many(picaHistory),
+}));
+
+export const picaHistoryRelations = relations(picaHistory, ({ one }) => ({
+  pica: one(picas, {
+    fields: [picaHistory.picaId],
+    references: [picas.id],
+  }),
+  user: one(users, {
+    fields: [picaHistory.userId],
+    references: [users.id],
   }),
 }));
 
@@ -125,6 +148,7 @@ export type Pica = typeof picas.$inferSelect;
 export type PicaWithRelations = Pica & {
   projectSite: ProjectSite;
   personInCharge: Person;
+  history?: PicaHistoryWithRelations[];
 };
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -133,3 +157,17 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// PICA History schema and types
+export const insertPicaHistorySchema = createInsertSchema(picaHistory).omit({
+  id: true,
+  changeDate: true,
+});
+
+export type InsertPicaHistory = z.infer<typeof insertPicaHistorySchema>;
+export type PicaHistory = typeof picaHistory.$inferSelect;
+
+// Expanded PicaHistory type with relations
+export type PicaHistoryWithRelations = PicaHistory & {
+  user?: User;
+};

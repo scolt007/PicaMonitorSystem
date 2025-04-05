@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { PicaWithRelations } from "@shared/schema";
+import { PicaWithRelations, PicaHistoryWithRelations } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,12 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import PicaFilterButtons from "@/components/PicaFilterButtons";
 import StatusBadge from "@/components/StatusBadge";
-import { Search } from "lucide-react";
+import { Search, ClipboardList, Clock, MessageCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PicaProgress: React.FC = () => {
   const { toast } = useToast();
@@ -35,8 +36,14 @@ const PicaProgress: React.FC = () => {
   });
 
   // Fetch people for edit form
-  const { data: people } = useQuery({
+  const { data: people } = useQuery<any[]>({
     queryKey: ["/api/people"],
+  });
+  
+  // Fetch PICA history when a PICA is selected
+  const { data: picaHistory, isLoading: isHistoryLoading } = useQuery<PicaHistoryWithRelations[]>({
+    queryKey: [`/api/picas/${selectedPica?.id}/history`],
+    enabled: !!selectedPica,
   });
 
   // Set up a periodic refresh to check for status updates
@@ -96,6 +103,7 @@ const PicaProgress: React.FC = () => {
     personInChargeId: z.number().min(1, "Required"),
     dueDate: z.string().min(1, "Required"),
     status: z.string().min(1, "Required"),
+    comment: z.string().optional(),
   });
 
   type EditPicaFormValues = z.infer<typeof editPicaSchema>;
@@ -108,6 +116,7 @@ const PicaProgress: React.FC = () => {
       personInChargeId: 0,
       dueDate: "",
       status: "",
+      comment: "",
     },
   });
 
@@ -135,6 +144,7 @@ const PicaProgress: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/picas/${selectedPica?.id}/history`] });
       toast({
         title: "Success",
         description: "PICA updated successfully",
@@ -182,6 +192,7 @@ const PicaProgress: React.FC = () => {
       personInChargeId: pica.personInChargeId,
       dueDate: pica.dueDate.split('T')[0], // Format date to YYYY-MM-DD
       status: pica.status,
+      comment: "",
     });
     setIsEditDialogOpen(true);
   };
@@ -346,104 +357,183 @@ const PicaProgress: React.FC = () => {
 
       {/* Edit PICA Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit PICA</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="correctiveAction"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Corrective Action</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} rows={3} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="personInChargeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Person In Charge</FormLabel>
-                    <Select
-                      value={field.value.toString()}
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+          
+          <Tabs defaultValue="edit" className="mt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="edit" className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" /> Edit PICA
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" /> History
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="edit" className="mt-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="correctiveAction"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Corrective Action</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={3} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="personInChargeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Person In Charge</FormLabel>
+                        <Select
+                          value={field.value.toString()}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select person" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {people?.map((person: any) => (
+                              <SelectItem key={person.id} value={person.id.toString()}>
+                                {person.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Due Date</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="progress">Progress</SelectItem>
+                            <SelectItem value="complete">Complete</SelectItem>
+                            <SelectItem value="overdue">Overdue</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comment</FormLabel>
+                        <FormDescription>
+                          {form.getValues("status") === "complete" ? "Please provide a reason for completion" : 
+                          form.getValues("status") === "overdue" ? "Please provide a reason for overdue status" : 
+                          "Optional comment for this update"}
+                        </FormDescription>
+                        <FormControl>
+                          <Textarea {...field} rows={2} placeholder="Enter a comment for this status change" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select person" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {people?.map((person: any) => (
-                          <SelectItem key={person.id} value={person.id.toString()}>
-                            {person.name}
-                          </SelectItem>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={updatePica.isPending}>
+                      {updatePica.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </TabsContent>
+            
+            <TabsContent value="history" className="mt-4">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">PICA History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isHistoryLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    ) : picaHistory && picaHistory.length > 0 ? (
+                      <div className="space-y-4">
+                        {picaHistory.map((history) => (
+                          <div key={history.id} className="border-b pb-3">
+                            <div className="flex justify-between items-start mb-1">
+                              <div className="font-medium flex items-center gap-2">
+                                <MessageCircle className="h-4 w-4 text-primary" />
+                                <span>Status changed to <StatusBadge status={history.newStatus} /></span>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {formatDate(history.timestamp)}
+                              </div>
+                            </div>
+                            <div className="text-sm">
+                              {history.comment ? (
+                                <p className="text-gray-700">{history.comment}</p>
+                              ) : (
+                                <p className="text-gray-500 italic">No comment provided</p>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {history.user?.username ? `Updated by ${history.user.username}` : "System update"}
+                            </div>
+                          </div>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Due Date</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="progress">Progress</SelectItem>
-                        <SelectItem value="complete">Complete</SelectItem>
-                        <SelectItem value="overdue">Overdue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updatePica.isPending}>
-                  {updatePica.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No history available</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

@@ -18,6 +18,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
+import { PicaHistory, PicaHistoryWithRelations, InsertPicaHistory, picaHistory } from "@shared/schema";
 
 // Storage interface
 export interface IStorage {
@@ -49,12 +50,16 @@ export interface IStorage {
   getPica(id: number): Promise<Pica | undefined>;
   getPicaByPicaId(picaId: string): Promise<Pica | undefined>;
   createPica(pica: InsertPica): Promise<Pica>;
-  updatePica(id: number, pica: Partial<InsertPica>): Promise<Pica | undefined>;
+  updatePica(id: number, pica: Partial<InsertPica>, historyComment?: string): Promise<Pica | undefined>;
   deletePica(id: number): Promise<boolean>;
   getPicasByStatus(status: string): Promise<Pica[]>;
   countPicasByStatus(): Promise<{ progress: number; complete: number; overdue: number; total: number }>;
   countPicasByDepartment(): Promise<any[]>;
   countPicasByProjectSite(): Promise<any[]>;
+  
+  // PICA History
+  getPicaHistory(picaId: number): Promise<PicaHistoryWithRelations[]>;
+  addPicaHistory(history: InsertPicaHistory): Promise<PicaHistory>;
 
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -250,7 +255,22 @@ export class DatabaseStorage implements IStorage {
     return newPica;
   }
 
-  async updatePica(id: number, pica: Partial<InsertPica>): Promise<Pica | undefined> {
+  async updatePica(id: number, pica: Partial<InsertPica>, historyComment?: string): Promise<Pica | undefined> {
+    // If status is changing, record history
+    if (pica.status) {
+      const currentPica = await this.getPica(id);
+      if (currentPica && currentPica.status !== pica.status) {
+        // Create history entry for the status change
+        await this.addPicaHistory({
+          picaId: id,
+          userId: 1, // Default to first user for now, in a real app this would come from auth
+          oldStatus: currentPica.status,
+          newStatus: pica.status,
+          comment: historyComment || `Status changed from ${currentPica.status} to ${pica.status}`
+        });
+      }
+    }
+    
     const [updatedPica] = await db
       .update(picas)
       .set(pica)
@@ -428,6 +448,35 @@ export class DatabaseStorage implements IStorage {
       .values(user)
       .returning();
     return newUser;
+  }
+
+  // PICA History methods
+  async getPicaHistory(picaId: number): Promise<PicaHistoryWithRelations[]> {
+    const history = await db
+      .select()
+      .from(picaHistory)
+      .where(eq(picaHistory.picaId, picaId))
+      .orderBy(desc(picaHistory.changeDate));
+      
+    const result: PicaHistoryWithRelations[] = [];
+    
+    for (const entry of history) {
+      const user = entry.userId ? await this.getUser(entry.userId) : undefined;
+      result.push({
+        ...entry,
+        user
+      });
+    }
+    
+    return result;
+  }
+  
+  async addPicaHistory(history: InsertPicaHistory): Promise<PicaHistory> {
+    const [newHistory] = await db
+      .insert(picaHistory)
+      .values(history)
+      .returning();
+    return newHistory;
   }
 }
 
