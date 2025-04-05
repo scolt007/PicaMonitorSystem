@@ -278,7 +278,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1 gap-2">
+      <div className="flex justify-between items-center mb-1.5">
         <h1 className="text-lg font-semibold text-gray-800">Dashboard PICA</h1>
         <div className="flex items-center gap-1 text-xs">
           <span className="font-medium">FILTER:</span>
@@ -287,107 +287,100 @@ const Dashboard: React.FC = () => {
               type="date" 
               value={dateRange.start}
               onChange={(e) => handleDateChange('start', e.target.value)}
-              className="h-6 w-28 text-[10px]"
+              className="h-6 w-24 text-[10px]"
             />
             <span className="flex items-center px-0.5">-</span>
             <Input 
               type="date" 
               value={dateRange.end}
               onChange={(e) => handleDateChange('end', e.target.value)}
-              className="h-6 w-28 text-[10px]"
+              className="h-6 w-24 text-[10px]"
             />
           </div>
         </div>
       </div>
 
-      {/* Ultra Compact Dashboard Layout - Top Section */}
-      <div className="grid grid-cols-12 gap-1.5 mb-1.5">
-        {/* Status Cards - First 2 columns */}
-        <div className="col-span-2">
-          {/* In Progress Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-2 mb-1.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-medium text-gray-500">In Progress</p>
-                <h3 className="text-base font-bold text-primary">
+      <div className="grid grid-cols-12 gap-1.5">
+        {/* Left Column - Status Cards */}
+        <div className="col-span-3">
+          <div className="grid grid-rows-4 gap-1">
+            {/* In Progress Card */}
+            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
+              <div className="flex items-center">
+                <h3 className="text-sm font-bold text-primary mr-1.5">
                   {statsLoading ? (
-                    <Skeleton className="h-4 w-7" />
+                    <Skeleton className="h-3 w-6" />
                   ) : (
                     (stats && stats.progress) || 0
                   )}
                 </h3>
-              </div>
-              <div className="p-1.5 bg-blue-100 rounded-full">
-                <Clock className="h-3 w-3 text-blue-600" />
+                <p className="text-[10px] font-medium text-gray-500">In Progress</p>
+                <div className="ml-auto p-1 bg-blue-100 rounded-full">
+                  <Clock className="h-2.5 w-2.5 text-blue-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Completed Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-2 mb-1.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-medium text-gray-500">Completed</p>
-                <h3 className="text-base font-bold text-green-600">
+            {/* Completed Card */}
+            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
+              <div className="flex items-center">
+                <h3 className="text-sm font-bold text-green-600 mr-1.5">
                   {statsLoading ? (
-                    <Skeleton className="h-4 w-7" />
+                    <Skeleton className="h-3 w-6" />
                   ) : (
                     (stats && stats.complete) || 0
                   )}
                 </h3>
-              </div>
-              <div className="p-1.5 bg-green-100 rounded-full">
-                <CheckCircle className="h-3 w-3 text-green-600" />
+                <p className="text-[10px] font-medium text-gray-500">Completed</p>
+                <div className="ml-auto p-1 bg-green-100 rounded-full">
+                  <CheckCircle className="h-2.5 w-2.5 text-green-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Overdue Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-2 mb-1.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-medium text-gray-500">Overdue</p>
-                <h3 className="text-base font-bold text-red-600">
+            {/* Overdue Card */}
+            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
+              <div className="flex items-center">
+                <h3 className="text-sm font-bold text-red-600 mr-1.5">
                   {statsLoading ? (
-                    <Skeleton className="h-4 w-7" />
+                    <Skeleton className="h-3 w-6" />
                   ) : (
                     (stats && stats.overdue) || 0
                   )}
                 </h3>
-              </div>
-              <div className="p-1.5 bg-red-100 rounded-full">
-                <AlertCircle className="h-3 w-3 text-red-600" />
+                <p className="text-[10px] font-medium text-gray-500">Overdue</p>
+                <div className="ml-auto p-1 bg-red-100 rounded-full">
+                  <AlertCircle className="h-2.5 w-2.5 text-red-600" />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Total PICA Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-medium text-gray-500">Total PICA</p>
-                <h3 className="text-base font-bold text-gray-800">
+            {/* Total PICA Card */}
+            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
+              <div className="flex items-center">
+                <h3 className="text-sm font-bold text-gray-800 mr-1.5">
                   {statsLoading ? (
-                    <Skeleton className="h-4 w-7" />
+                    <Skeleton className="h-3 w-6" />
                   ) : (
                     (stats && stats.total) || 0
                   )}
                 </h3>
-              </div>
-              <div className="p-1.5 bg-gray-100 rounded-full">
-                <Calendar className="h-3 w-3 text-gray-600" />
+                <p className="text-[10px] font-medium text-gray-500">Total PICA</p>
+                <div className="ml-auto p-1 bg-gray-100 rounded-full">
+                  <Calendar className="h-2.5 w-2.5 text-gray-600" />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* PICA Overview - Middle 3 columns */}
-        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+        {/* PICA Overview - Middle column */}
+        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
           <h3 className="text-[11px] font-semibold mb-0.5">PICA Overview</h3>
           <div className="flex flex-col">
             <div className="w-full flex items-center justify-center">
               {statsLoading ? (
-                <Skeleton className="w-[90px] h-[90px] rounded-full" />
+                <Skeleton className="w-[100px] h-[100px] rounded-full" />
               ) : (
                 <PieChart
                   data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
@@ -396,26 +389,40 @@ const Dashboard: React.FC = () => {
                 />
               )}
             </div>
-            <div className="w-full">
-              <div className="grid grid-cols-2 gap-0.5 text-[10px] mt-0.5">
-                <div className="font-medium flex items-center"><div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div> Progress:</div>
-                <div className="font-semibold text-right text-blue-600">{calcFilteredStats.progress}</div>
-                
-                <div className="font-medium flex items-center"><div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div> Complete:</div>
-                <div className="font-semibold text-right text-green-600">{calcFilteredStats.complete}</div>
-                
-                <div className="font-medium flex items-center"><div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div> Overdue:</div>
-                <div className="font-semibold text-right text-red-600">{calcFilteredStats.overdue}</div>
-                
-                <div className="font-medium">Total:</div>
-                <div className="font-semibold text-right">{calcFilteredStats.total}</div>
+            <div className="w-full mt-0.5">
+              <div className="text-[9px] mt-0.5 space-y-0.5">
+                <div className="flex justify-between">
+                  <div className="flex items-center font-medium">
+                    <div className="inline-block w-2 h-2 bg-primary mr-1"></div>
+                    Progress:
+                  </div>
+                  <div className="font-semibold">{calcFilteredStats.progress}</div>
+                </div>
+                <div className="flex justify-between">
+                  <div className="flex items-center font-medium">
+                    <div className="inline-block w-2 h-2 bg-green-500 mr-1"></div>
+                    Complete:
+                  </div>
+                  <div className="font-semibold">{calcFilteredStats.complete}</div>
+                </div>
+                <div className="flex justify-between">
+                  <div className="flex items-center font-medium">
+                    <div className="inline-block w-2 h-2 bg-red-500 mr-1"></div>
+                    Overdue:
+                  </div>
+                  <div className="font-semibold">{calcFilteredStats.overdue}</div>
+                </div>
+                <div className="flex justify-between">
+                  <div className="font-medium">Total:</div>
+                  <div className="font-semibold">{calcFilteredStats.total}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Department PICA Chart - Right 7 columns */}
-        <div className="col-span-7 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+        {/* Department PICA Chart - Right columns */}
+        <div className="col-span-6 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
           <div className="flex justify-between items-center mb-0.5">
             <h3 className="text-[11px] font-semibold">Department PICA Summary</h3>
             <div className="flex flex-wrap items-center text-[8px] gap-0.5">
@@ -436,7 +443,7 @@ const Dashboard: React.FC = () => {
           {deptStatsLoading ? (
             <Skeleton className="w-full h-[120px]" />
           ) : (
-            <div className="h-[115px]">
+            <div className="h-[120px]">
               <BarChart
                 labels={calcFilteredDeptStats.map(d => d.department)}
                 datasets={[
@@ -464,25 +471,11 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Middle Row: Project Site Chart and Calendar */}
-      <div className="grid grid-cols-12 gap-1.5 mb-1.5">
-        {/* Project Site PICA Chart - Left 4 columns */}
-        <div className="col-span-4 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+      <div className="grid grid-cols-12 gap-1.5 mt-1.5 mb-1.5">
+        {/* Project Site PICA Chart - Left Column */}
+        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
           <div className="flex justify-between items-center mb-0.5">
             <h3 className="text-[11px] font-semibold">Project Site Summary</h3>
-            <div className="flex flex-wrap items-center text-[8px] gap-0.5">
-              <div className="flex items-center mr-0.5">
-                <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
-                <span>Progress</span>
-              </div>
-              <div className="flex items-center mr-0.5">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
-                <span>Complete</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
-                <span>Overdue</span>
-              </div>
-            </div>
           </div>
           {siteStatsLoading ? (
             <Skeleton className="w-full h-[120px]" />
@@ -511,10 +504,24 @@ const Dashboard: React.FC = () => {
               />
             </div>
           )}
+          <div className="flex flex-wrap items-center text-[8px] gap-0.5 mt-0.5">
+            <div className="flex items-center mr-0.5">
+              <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
+              <span>Progress</span>
+            </div>
+            <div className="flex items-center mr-0.5">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
+              <span>Complete</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
+              <span>Overdue</span>
+            </div>
+          </div>
         </div>
 
-        {/* Calendar - Right 8 columns */}
-        <div className="col-span-8 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+        {/* Calendar - Right Column */}
+        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
           {/* Calendar Header */}
           <div className="flex justify-between items-center mb-0.5">
             <h3 className="text-[11px] font-semibold">Calendar View</h3>
@@ -531,7 +538,7 @@ const Dashboard: React.FC = () => {
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-0.5 text-[7px] mb-0.5">
-            <div className="bg-yellow-300 font-medium px-0.5 rounded text-[7px]">CREATED</div>
+            <div className="bg-yellow-300 text-black font-medium px-0.5 rounded text-[7px]">CREATED</div>
             <div className="bg-blue-500 text-white font-medium px-0.5 rounded flex items-center gap-0.5 text-[7px]">
               <Clock className="w-1.5 h-1.5" /> PROGRESS
             </div>
@@ -561,7 +568,7 @@ const Dashboard: React.FC = () => {
             {picasLoading ? (
               // Show skeleton while loading
               Array.from({ length: daysInMonth.length }).map((_, index) => (
-                <div key={`skeleton-${index}`} className="border border-gray-200 min-h-[32px] p-0.5">
+                <div key={`skeleton-${index}`} className="border border-gray-200 min-h-[30px] p-0.5">
                   <Skeleton className="h-2.5 w-2.5 rounded-full" />
                   <Skeleton className="h-2.5 w-full mt-0.5" />
                 </div>
@@ -571,7 +578,7 @@ const Dashboard: React.FC = () => {
               daysInMonth.map((day) => {
                 const dayPicas = getPicasForDay(day);
                 return (
-                  <div key={day.toISOString()} className="border border-gray-200 min-h-[32px] p-0.5">
+                  <div key={day.toISOString()} className="border border-gray-200 min-h-[30px] p-0.5">
                     <div className={`text-[8px] ${isToday(day) ? "bg-primary text-white rounded-full w-3 h-3 flex items-center justify-center" : day.getDay() === 0 || day.getDay() === 6 ? "text-red-600 font-medium" : "font-medium"}`}>
                       {format(day, "d")}
                     </div>
@@ -664,56 +671,56 @@ const Dashboard: React.FC = () => {
             </Button>
           </div>
         </div>
-        <div className="p-1">
+        <div className="p-0.5">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-primary">
                 <tr>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     PICA ID
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Date
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Issue
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Task
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     PIC
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-left text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-left text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Due Date
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-center text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-center text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0.5 text-center text-[8px] font-medium text-white uppercase tracking-wider"
+                    className="px-1 py-0.5 text-center text-[7px] font-medium text-white uppercase tracking-wider"
                   >
                     Action
                   </th>
@@ -755,26 +762,26 @@ const Dashboard: React.FC = () => {
                   // Show current page items
                   getCurrentPageItems().map((pica) => (
                     <tr key={pica.id} className="hover:bg-gray-50">
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] font-medium text-gray-800">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] font-medium text-gray-800">
                         {pica.picaId}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] text-gray-800">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] text-gray-800">
                         {pica.date ? format(new Date(pica.date), 'dd MMM yy') : '-'}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] text-gray-800">
-                        {pica.issue.length > 18 
-                          ? `${pica.issue.substring(0, 18)}...` 
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] text-gray-800">
+                        {pica.issue && pica.issue.length > 16 
+                          ? `${pica.issue.substring(0, 16)}...` 
                           : pica.issue}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] text-gray-800">
-                        {pica.correctiveAction.length > 20
-                          ? `${pica.correctiveAction.substring(0, 20)}...` 
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] text-gray-800">
+                        {pica.correctiveAction && pica.correctiveAction.length > 16
+                          ? `${pica.correctiveAction.substring(0, 16)}...` 
                           : pica.correctiveAction}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] text-gray-800">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] text-gray-800">
                         {pica.personInCharge?.name}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-[9px] text-gray-800">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-[8px] text-gray-800">
                         {pica.dueDate ? format(new Date(pica.dueDate), 'dd MMM yy') : '-'}
                       </td>
                       <td className="px-1 py-0.5 whitespace-nowrap text-center">
@@ -786,20 +793,20 @@ const Dashboard: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-4 w-4"
+                              className="h-3.5 w-3.5 p-0"
                               title="Edit PICA"
                             >
-                              <Edit className="h-2 w-2" />
+                              <Edit className="h-1.5 w-1.5" />
                             </Button>
                           </Link>
                           <Link href={`/pica-progress?picaId=${pica.picaId}&action=view`}>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-4 w-4"
+                              className="h-3.5 w-3.5 p-0"
                               title="View Details"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                               </svg>
@@ -823,16 +830,16 @@ const Dashboard: React.FC = () => {
             </table>
           </div>
           {/* Pagination controls */}
-          {filteredPicas.length > 0 && (
+          {filteredPicas && filteredPicas.length > 0 && (
             <div className="flex items-center justify-between border-t border-gray-200 px-1 py-0.5 mt-0.5">
-              <div className="hidden md:flex items-center text-[8px] text-gray-700">
+              <div className="hidden md:flex items-center text-[7px] text-gray-700">
                 {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPicas.length)} of {filteredPicas.length}
               </div>
               <div className="flex items-center space-x-0.5 mx-auto md:mx-0">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-4 text-[8px] px-1"
+                  className="h-3.5 text-[7px] px-1 py-0"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(currentPage - 1)}
                 >
@@ -843,7 +850,7 @@ const Dashboard: React.FC = () => {
                     key={i}
                     variant={currentPage === i + 1 ? "default" : "outline"}
                     size="sm"
-                    className="h-4 w-4 text-[8px]"
+                    className="h-3.5 w-3.5 text-[7px] p-0"
                     onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
@@ -852,7 +859,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-4 text-[8px] px-1"
+                  className="h-3.5 text-[7px] px-1 py-0"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(currentPage + 1)}
                 >
