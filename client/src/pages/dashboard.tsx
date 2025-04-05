@@ -35,17 +35,32 @@ const Dashboard: React.FC = () => {
   });
 
   // Fetch PICA statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<{
+    progress: number;
+    complete: number;
+    overdue: number;
+    total: number;
+  }>({
     queryKey: ["/api/picas/stats"],
   });
 
   // Fetch PICA by department statistics
-  const { data: deptStats, isLoading: deptStatsLoading } = useQuery({
+  const { data: deptStats, isLoading: deptStatsLoading } = useQuery<Array<{
+    department: string;
+    progress: number;
+    complete: number;
+    overdue: number;
+  }>>({
     queryKey: ["/api/picas/stats/department"],
   });
 
   // Fetch PICA by project site statistics
-  const { data: siteStats, isLoading: siteStatsLoading } = useQuery({
+  const { data: siteStats, isLoading: siteStatsLoading } = useQuery<Array<{
+    site: string;
+    progress: number;
+    complete: number;
+    overdue: number;
+  }>>({
     queryKey: ["/api/picas/stats/site"],
   });
 
@@ -73,7 +88,7 @@ const Dashboard: React.FC = () => {
   const startDay = getDay(monthStart);
   
   // Filter PICAs for current month
-  const picasInMonth = picas?.filter((pica: any) => {
+  const picasInMonth = picas?.filter((pica: PicaWithRelations) => {
     const picaDate = parseISO(pica.date);
     const picaDueDate = parseISO(pica.dueDate);
     return isSameMonth(picaDate, currentMonth) || isSameMonth(picaDueDate, currentMonth);
@@ -83,7 +98,7 @@ const Dashboard: React.FC = () => {
   const getPicasForDay = (day: Date) => {
     if (!picasInMonth) return [];
     
-    return picasInMonth.filter((pica: any) => {
+    return picasInMonth.filter((pica: PicaWithRelations) => {
       const picaDate = parseISO(pica.date);
       const picaDueDate = parseISO(pica.dueDate);
       
@@ -98,7 +113,7 @@ const Dashboard: React.FC = () => {
   };
 
   // Determine if a PICA is created or due on a specific day
-  const isPicaCreated = (pica: any, day: Date) => {
+  const isPicaCreated = (pica: PicaWithRelations, day: Date) => {
     const picaDate = parseISO(pica.date);
     return picaDate.getDate() === day.getDate() && 
            picaDate.getMonth() === day.getMonth() && 
@@ -106,7 +121,7 @@ const Dashboard: React.FC = () => {
   };
   
   // Get background color based on PICA status and whether it's the creation or due date
-  const getPicaBackgroundColor = (pica: any, day: Date) => {
+  const getPicaBackgroundColor = (pica: PicaWithRelations, day: Date) => {
     const isCreationDay = isPicaCreated(pica, day);
     
     if (isCreationDay) {
@@ -188,12 +203,7 @@ const Dashboard: React.FC = () => {
     }
     
     // Backend now returns data in the correct format, we can use it directly
-    return deptStats.map((dept: any) => ({
-      department: dept.department,
-      progress: dept.progress,
-      complete: dept.complete,
-      overdue: dept.overdue
-    }));
+    return deptStats;
   }, [deptStats]);
   
   // Calculate site statistics based on filtered PICAs
@@ -218,7 +228,7 @@ const Dashboard: React.FC = () => {
     
     // Initialize with existing sites
     if (Array.isArray(siteStats)) {
-      siteStats.forEach((site: any) => {
+      siteStats.forEach(site => {
         siteMap[site.site] = { 
           site: site.site, 
           progress: 0, 
@@ -284,26 +294,26 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="text-2xl font-semibold text-gray-800">Dashboard PICA</h1>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="text-sm text-gray-700 font-medium flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
-            <span>FILTER DATE:</span>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+        <h1 className="text-xl font-semibold text-gray-800">Dashboard PICA</h1>
+        <div className="flex flex-col sm:flex-row items-center gap-1">
+          <div className="text-xs text-gray-700 font-medium flex items-center">
+            <Calendar className="mr-1 h-3 w-3" />
+            <span>FILTER:</span>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-1">
             <Input 
               type="date" 
               value={dateRange.start}
               onChange={(e) => handleDateChange('start', e.target.value)}
-              className="h-9 w-36"
+              className="h-7 w-32 text-xs"
             />
-            <span className="flex items-center">to</span>
+            <span className="flex items-center text-xs">-</span>
             <Input 
               type="date" 
               value={dateRange.end}
               onChange={(e) => handleDateChange('end', e.target.value)}
-              className="h-9 w-36"
+              className="h-7 w-32 text-xs"
             />
           </div>
         </div>
@@ -321,7 +331,7 @@ const Dashboard: React.FC = () => {
                   {statsLoading ? (
                     <Skeleton className="h-6 w-12" />
                   ) : (
-                    stats?.progress || 0
+                    (stats && stats.progress) || 0
                   )}
                 </h3>
               </div>
@@ -342,7 +352,7 @@ const Dashboard: React.FC = () => {
                   {statsLoading ? (
                     <Skeleton className="h-6 w-12" />
                   ) : (
-                    stats?.complete || 0
+                    (stats && stats.complete) || 0
                   )}
                 </h3>
               </div>
@@ -363,7 +373,7 @@ const Dashboard: React.FC = () => {
                   {statsLoading ? (
                     <Skeleton className="h-6 w-12" />
                   ) : (
-                    stats?.overdue || 0
+                    (stats && stats.overdue) || 0
                   )}
                 </h3>
               </div>
@@ -384,7 +394,7 @@ const Dashboard: React.FC = () => {
                   {statsLoading ? (
                     <Skeleton className="h-6 w-12" />
                   ) : (
-                    stats?.total || 0
+                    (stats && stats.total) || 0
                   )}
                 </h3>
               </div>
@@ -405,7 +415,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col">
               <div className="w-full flex items-center justify-center mb-2">
                 {statsLoading ? (
-                  <Skeleton className="w-[150px] h-[150px] rounded-full" />
+                  <Skeleton className="w-[120px] h-[120px] rounded-full" />
                 ) : (
                   <PieChart
                     data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
@@ -466,25 +476,25 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             {deptStatsLoading ? (
-              <Skeleton className="w-full h-[140px]" />
+              <Skeleton className="w-full h-[120px]" />
             ) : (
-              <div className="h-[180px]">
+              <div className="h-[160px]">
                 <BarChart
-                  labels={calcFilteredDeptStats.map((d: any) => d.department)}
+                  labels={calcFilteredDeptStats.map(d => d.department)}
                   datasets={[
                     {
                       label: "Progress",
-                      data: calcFilteredDeptStats.map((d: any) => d.progress),
+                      data: calcFilteredDeptStats.map(d => d.progress),
                       backgroundColor: "#2563eb",
                     },
                     {
                       label: "Complete",
-                      data: calcFilteredDeptStats.map((d: any) => d.complete),
+                      data: calcFilteredDeptStats.map(d => d.complete),
                       backgroundColor: "#22c55e", // Green for Complete
                     },
                     {
                       label: "Overdue",
-                      data: calcFilteredDeptStats.map((d: any) => d.overdue),
+                      data: calcFilteredDeptStats.map(d => d.overdue),
                       backgroundColor: "#ef4444", // Red for Overdue
                     },
                   ]}
@@ -500,25 +510,25 @@ const Dashboard: React.FC = () => {
           <CardContent className="p-3">
             <h3 className="text-sm font-semibold mb-2">Project Site Chart</h3>
             {siteStatsLoading ? (
-              <Skeleton className="w-full h-[140px]" />
+              <Skeleton className="w-full h-[120px]" />
             ) : (
-              <div className="h-[180px]">
+              <div className="h-[160px]">
                 <BarChart
-                  labels={calcFilteredSiteStats.map((s: any) => s.site)}
+                  labels={calcFilteredSiteStats.map(s => s.site)}
                   datasets={[
                     {
                       label: "Progress",
-                      data: calcFilteredSiteStats.map((s: any) => s.progress),
+                      data: calcFilteredSiteStats.map(s => s.progress),
                       backgroundColor: "#2563eb",
                     },
                     {
                       label: "Complete",
-                      data: calcFilteredSiteStats.map((s: any) => s.complete),
+                      data: calcFilteredSiteStats.map(s => s.complete),
                       backgroundColor: "#22c55e", // Green for Complete
                     },
                     {
                       label: "Overdue",
-                      data: calcFilteredSiteStats.map((s: any) => s.overdue),
+                      data: calcFilteredSiteStats.map(s => s.overdue),
                       backgroundColor: "#ef4444", // Red for Overdue
                     },
                   ]}
@@ -594,7 +604,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       {dayPicas.length > 0 && (
                         <div className="mt-1 overflow-hidden">
-                          {dayPicas.slice(0, 2).map((pica: any) => (
+                          {dayPicas.slice(0, 2).map((pica: PicaWithRelations) => (
                             <HoverCard.Root key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}>
                               <HoverCard.Trigger asChild>
                                 <div 
