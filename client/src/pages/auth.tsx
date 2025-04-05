@@ -31,6 +31,7 @@ const loginSchema = z.object({
 // Register form schema
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   passwordConfirm: z.string().min(6, "Confirm password is required"),
   name: z.string().min(2, "Name is required"),
@@ -69,6 +70,7 @@ const AuthPage = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       passwordConfirm: "",
       name: "",
@@ -88,7 +90,7 @@ const AuthPage = () => {
       username: data.username,
       password: data.password,
       name: data.name,
-      email: `${data.username}@picamonitor.com`, // Generate generic email
+      email: data.email,
       role: "user", // Default role for new registrations
     };
 
@@ -217,6 +219,19 @@ const AuthPage = () => {
                       />
                       {registerForm.formState.errors.username && (
                         <p className="text-sm text-red-500">{registerForm.formState.errors.username.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium">Email</label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email address"
+                        {...registerForm.register("email")}
+                      />
+                      {registerForm.formState.errors.email && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
 
