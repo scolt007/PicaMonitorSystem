@@ -351,62 +351,87 @@ export class DatabaseStorage implements IStorage {
   }
 
   async countPicasByDepartment(): Promise<any[]> {
-    const result = [];
-    const allDepartments = await this.getAllDepartments();
-    
-    for (const department of allDepartments) {
-      const departmentPeople = await db
-        .select()
-        .from(people)
-        .where(eq(people.departmentId, department.id));
+    try {
+      const result = [];
+      const allDepartments = await this.getAllDepartments();
       
-      const peopleIds = departmentPeople.map(person => person.id);
-      
-      const progressCount = peopleIds.length > 0 
-        ? await db
+      for (const department of allDepartments) {
+        const departmentPeople = await db
+          .select()
+          .from(people)
+          .where(eq(people.departmentId, department.id));
+        
+        // Skip if no people in department
+        if (departmentPeople.length === 0) {
+          result.push({
+            department: department.name,
+            progress: 0,
+            complete: 0,
+            overdue: 0
+          });
+          continue;
+        }
+        
+        // Get counts for each status
+        let progressCount = 0;
+        let completeCount = 0;
+        let overdueCount = 0;
+        
+        // Loop through each person instead of using IN clause
+        for (const person of departmentPeople) {
+          // Progress count
+          const progressResult = await db
             .select({ count: count() })
             .from(picas)
             .where(
               and(
                 eq(picas.status, "progress"),
-                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+                eq(picas.personInChargeId, person.id)
               )
-            )
-        : [{ count: 0 }];
-      
-      const completeCount = peopleIds.length > 0
-        ? await db
+            );
+          
+          // Complete count
+          const completeResult = await db
             .select({ count: count() })
             .from(picas)
             .where(
               and(
                 eq(picas.status, "complete"),
-                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+                eq(picas.personInChargeId, person.id)
               )
-            )
-        : [{ count: 0 }];
-      
-      const overdueCount = peopleIds.length > 0
-        ? await db
+            );
+          
+          // Overdue count
+          const overdueResult = await db
             .select({ count: count() })
             .from(picas)
             .where(
               and(
                 eq(picas.status, "overdue"),
-                sql`${picas.personInChargeId} IN (${peopleIds.join(',')})`
+                eq(picas.personInChargeId, person.id)
               )
-            )
-        : [{ count: 0 }];
+            );
+          
+          // Add to department totals
+          progressCount += progressResult[0].count;
+          completeCount += completeResult[0].count;
+          overdueCount += overdueResult[0].count;
+        }
+        
+        result.push({
+          department: department.name,
+          progress: progressCount,
+          complete: completeCount,
+          overdue: overdueCount
+        });
+      }
       
-      result.push({
-        department: department.name,
-        progress: progressCount[0].count,
-        complete: completeCount[0].count,
-        overdue: overdueCount[0].count
-      });
+      return result;
+    } catch (error) {
+      console.error("Error in countPicasByDepartment:", error);
+      // Return empty result on error rather than failing completely
+      return [];
     }
-    
-    return result;
   }
 
   async countPicasByProjectSite(): Promise<any[]> {

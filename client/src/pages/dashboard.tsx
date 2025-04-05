@@ -180,67 +180,21 @@ const Dashboard: React.FC = () => {
     };
   }, [picas, dateRange]);
   
-  // Calculate department statistics based on date-filtered PICAs
+  // Calculate department statistics based on backend data
   const calcFilteredDeptStats = React.useMemo(() => {
-    if (!picas || !deptStats) return [];
-    
-    // Filter by date range
-    let filtered = picas;
-    if (dateRange.start && dateRange.end) {
-      const startDate = new Date(dateRange.start);
-      const endDate = new Date(dateRange.end);
-      endDate.setHours(23, 59, 59, 999); // Include the entire end day
-      
-      filtered = filtered.filter((pica) => {
-        const picaDate = new Date(pica.date);
-        return picaDate >= startDate && picaDate <= endDate;
-      });
+    // Use the data directly from the backend, which is already calculated per department
+    if (!deptStats || !Array.isArray(deptStats)) {
+      return [];
     }
     
-    // Group by department
-    const deptMap: Record<string, { department: string, progress: number, complete: number, overdue: number }> = {};
-    
-    // Initialize with existing departments
-    if (Array.isArray(deptStats)) {
-      deptStats.forEach((dept: any) => {
-        deptMap[dept.department] = { 
-          department: dept.department, 
-          progress: 0, 
-          complete: 0, 
-          overdue: 0 
-        };
-      });
-    }
-    
-    // Count PICAs by department and status
-    filtered.forEach(pica => {
-      // Need to handle the relationship properly by looking up department info from the personInCharge
-      let deptName = 'Unknown';
-      
-      if (pica.personInCharge) {
-        // First, get the department ID from the person
-        const deptId = pica.personInCharge.departmentId;
-        
-        // Find the department from the relevant array if available
-        if (deptId && Array.isArray(deptStats)) {
-          const dept = deptStats.find((d: any) => d.id === deptId);
-          if (dept && dept.name) {
-            deptName = dept.name;
-          }
-        }
-      }
-      
-      if (!deptMap[deptName]) {
-        deptMap[deptName] = { department: deptName, progress: 0, complete: 0, overdue: 0 };
-      }
-      
-      if (pica.status === 'progress') deptMap[deptName].progress++;
-      if (pica.status === 'complete') deptMap[deptName].complete++;
-      if (pica.status === 'overdue') deptMap[deptName].overdue++;
-    });
-    
-    return Object.values(deptMap);
-  }, [picas, deptStats, dateRange]);
+    // Backend now returns data in the correct format, we can use it directly
+    return deptStats.map((dept: any) => ({
+      department: dept.department,
+      progress: dept.progress,
+      complete: dept.complete,
+      overdue: dept.overdue
+    }));
+  }, [deptStats]);
   
   // Calculate site statistics based on filtered PICAs
   const calcFilteredSiteStats = React.useMemo(() => {
