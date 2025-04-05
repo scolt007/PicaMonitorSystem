@@ -309,15 +309,103 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Status Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
+        {/* Progress Card */}
+        <Card className="bg-white shadow-sm overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500">In Progress</p>
+                <h3 className="text-xl font-bold text-primary mt-0.5">
+                  {statsLoading ? (
+                    <Skeleton className="h-6 w-12" />
+                  ) : (
+                    stats?.progress || 0
+                  )}
+                </h3>
+              </div>
+              <div className="p-1.5 bg-blue-100 rounded-full">
+                <Clock className="h-4 w-4 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Completed Card */}
+        <Card className="bg-white shadow-sm overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Completed</p>
+                <h3 className="text-xl font-bold text-green-600 mt-0.5">
+                  {statsLoading ? (
+                    <Skeleton className="h-6 w-12" />
+                  ) : (
+                    stats?.complete || 0
+                  )}
+                </h3>
+              </div>
+              <div className="p-1.5 bg-green-100 rounded-full">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Overdue Card */}
+        <Card className="bg-white shadow-sm overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Overdue</p>
+                <h3 className="text-xl font-bold text-red-600 mt-0.5">
+                  {statsLoading ? (
+                    <Skeleton className="h-6 w-12" />
+                  ) : (
+                    stats?.overdue || 0
+                  )}
+                </h3>
+              </div>
+              <div className="p-1.5 bg-red-100 rounded-full">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total PICA Card */}
+        <Card className="bg-white shadow-sm overflow-hidden">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Total PICA</p>
+                <h3 className="text-xl font-bold text-gray-800 mt-0.5">
+                  {statsLoading ? (
+                    <Skeleton className="h-6 w-12" />
+                  ) : (
+                    stats?.total || 0
+                  )}
+                </h3>
+              </div>
+              <div className="p-1.5 bg-gray-100 rounded-full">
+                <Calendar className="h-4 w-4 text-gray-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Dashboard Grid - Updated to 3-column layout for better fit */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* PICA Overview */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row">
-              <div className="w-full md:w-1/2 flex items-center justify-center mb-4 md:mb-0">
+          <CardContent className="p-3">
+            <h3 className="text-sm font-semibold mb-2">PICA Overview</h3>
+            <div className="flex flex-col">
+              <div className="w-full flex items-center justify-center mb-2">
                 {statsLoading ? (
-                  <Skeleton className="w-[200px] h-[200px] rounded-full" />
+                  <Skeleton className="w-[150px] h-[150px] rounded-full" />
                 ) : (
                   <PieChart
                     data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
@@ -326,31 +414,32 @@ const Dashboard: React.FC = () => {
                   />
                 )}
               </div>
-              <div className="w-full md:w-1/2 flex flex-col justify-center pl-0 md:pl-4">
-                <div className="mb-2 text-lg font-medium">
-                  Created : <span className="font-semibold">{calcFilteredStats.total}</span>
+              <div className="w-full flex flex-col justify-center">
+                <div className="grid grid-cols-2 gap-1 mt-1 text-sm">
+                  <div className="font-medium">Created:</div>
+                  <div className="font-semibold text-right">{calcFilteredStats.total}</div>
+                  
+                  <div className="font-medium">Complete:</div>
+                  <div className="font-semibold text-right text-green-600">{calcFilteredStats.complete}</div>
+                  
+                  <div className="font-medium">Progress:</div>
+                  <div className="font-semibold text-right text-blue-600">{calcFilteredStats.progress}</div>
+                  
+                  <div className="font-medium">Overdue:</div>
+                  <div className="font-semibold text-right text-red-600">{calcFilteredStats.overdue}</div>
                 </div>
-                <div className="mb-2 text-lg font-medium">
-                  Complete : <span className="font-semibold">{calcFilteredStats.complete}</span>
-                </div>
-                <div className="mb-2 text-lg font-medium">
-                  Progress : <span className="font-semibold">{calcFilteredStats.progress}</span>
-                </div>
-                <div className="text-lg font-medium">
-                  Overdue : <span className="font-semibold">{calcFilteredStats.overdue}</span>
-                </div>
-                <div className="mt-4 flex text-xs font-medium">
-                  <div className="flex items-center mr-3">
-                    <div className="w-3 h-3 bg-primary rounded-sm mr-1"></div>
-                    <span>PROGRESS</span>
+                <div className="mt-2 flex flex-wrap justify-center text-xs font-medium">
+                  <div className="flex items-center mr-2">
+                    <div className="w-2 h-2 bg-primary rounded-sm mr-1"></div>
+                    <span>Progress</span>
                   </div>
-                  <div className="flex items-center mr-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
-                    <span>COMPLETE</span>
+                  <div className="flex items-center mr-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-sm mr-1"></div>
+                    <span>Complete</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-sm mr-1"></div>
-                    <span>OVERDUE</span>
+                    <div className="w-2 h-2 bg-red-500 rounded-sm mr-1"></div>
+                    <span>Overdue</span>
                   </div>
                 </div>
               </div>
@@ -360,101 +449,114 @@ const Dashboard: React.FC = () => {
 
         {/* Department PICA Chart */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center text-sm">
-                <div className="w-4 h-4 bg-primary mr-1"></div>
-                <span className="mr-3">Progress</span>
-                <div className="w-4 h-4 bg-green-500 mr-1"></div>
-                <span className="mr-3">Complete</span>
-                <div className="w-4 h-4 bg-red-500 mr-1"></div>
+          <CardContent className="p-3">
+            <h3 className="text-sm font-semibold mb-2">Department Chart</h3>
+            <div className="flex flex-wrap items-center text-xs gap-1 mb-2">
+              <div className="flex items-center mr-1">
+                <div className="w-2 h-2 bg-primary rounded-sm mr-1"></div>
+                <span>Progress</span>
+              </div>
+              <div className="flex items-center mr-1">
+                <div className="w-2 h-2 bg-green-500 rounded-sm mr-1"></div>
+                <span>Complete</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-red-500 rounded-sm mr-1"></div>
                 <span>Overdue</span>
               </div>
             </div>
             {deptStatsLoading ? (
-              <Skeleton className="w-full h-[200px]" />
+              <Skeleton className="w-full h-[140px]" />
             ) : (
-              <BarChart
-                labels={calcFilteredDeptStats.map((d: any) => d.department)}
-                datasets={[
-                  {
-                    label: "Progress",
-                    data: calcFilteredDeptStats.map((d: any) => d.progress),
-                    backgroundColor: "#2563eb",
-                  },
-                  {
-                    label: "Complete",
-                    data: calcFilteredDeptStats.map((d: any) => d.complete),
-                    backgroundColor: "#22c55e", // Green for Complete
-                  },
-                  {
-                    label: "Overdue",
-                    data: calcFilteredDeptStats.map((d: any) => d.overdue),
-                    backgroundColor: "#ef4444", // Red for Overdue
-                  },
-                ]}
-                maxY={5}
-              />
+              <div className="h-[180px]">
+                <BarChart
+                  labels={calcFilteredDeptStats.map((d: any) => d.department)}
+                  datasets={[
+                    {
+                      label: "Progress",
+                      data: calcFilteredDeptStats.map((d: any) => d.progress),
+                      backgroundColor: "#2563eb",
+                    },
+                    {
+                      label: "Complete",
+                      data: calcFilteredDeptStats.map((d: any) => d.complete),
+                      backgroundColor: "#22c55e", // Green for Complete
+                    },
+                    {
+                      label: "Overdue",
+                      data: calcFilteredDeptStats.map((d: any) => d.overdue),
+                      backgroundColor: "#ef4444", // Red for Overdue
+                    },
+                  ]}
+                  maxY={5}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Project Site PICA Chart */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3">
+            <h3 className="text-sm font-semibold mb-2">Project Site Chart</h3>
             {siteStatsLoading ? (
-              <Skeleton className="w-full h-[200px]" />
+              <Skeleton className="w-full h-[140px]" />
             ) : (
-              <BarChart
-                labels={calcFilteredSiteStats.map((s: any) => s.site)}
-                datasets={[
-                  {
-                    label: "Progress",
-                    data: calcFilteredSiteStats.map((s: any) => s.progress),
-                    backgroundColor: "#2563eb",
-                  },
-                  {
-                    label: "Complete",
-                    data: calcFilteredSiteStats.map((s: any) => s.complete),
-                    backgroundColor: "#22c55e", // Green for Complete
-                  },
-                  {
-                    label: "Overdue",
-                    data: calcFilteredSiteStats.map((s: any) => s.overdue),
-                    backgroundColor: "#ef4444", // Red for Overdue
-                  },
-                ]}
-                maxY={6}
-              />
+              <div className="h-[180px]">
+                <BarChart
+                  labels={calcFilteredSiteStats.map((s: any) => s.site)}
+                  datasets={[
+                    {
+                      label: "Progress",
+                      data: calcFilteredSiteStats.map((s: any) => s.progress),
+                      backgroundColor: "#2563eb",
+                    },
+                    {
+                      label: "Complete",
+                      data: calcFilteredSiteStats.map((s: any) => s.complete),
+                      backgroundColor: "#22c55e", // Green for Complete
+                    },
+                    {
+                      label: "Overdue",
+                      data: calcFilteredSiteStats.map((s: any) => s.overdue),
+                      backgroundColor: "#ef4444", // Red for Overdue
+                    },
+                  ]}
+                  maxY={6}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Calendar PICA */}
-        <Card>
-          <CardContent className="p-4">
+        {/* Calendar PICA - Now full-width across the bottom */}
+        <Card className="md:col-span-3">
+          <CardContent className="p-3">
             {/* Calendar Header */}
-            <div className="bg-primary text-white p-2 flex justify-between items-center rounded-md mb-2">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={prevMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="text-base font-medium">{format(currentMonth, "MMMM yyyy")}</h2>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-primary/80" onClick={nextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-semibold">Calendar View</h3>
+              <div className="flex items-center">
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={prevMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <h2 className="text-sm font-medium mx-2">{format(currentMonth, "MMMM yyyy")}</h2>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={nextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
-              <div className="bg-yellow-300 text-xs font-medium px-2 py-0.5 rounded">PICA CREATED</div>
-              <div className="bg-blue-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
-                <Clock className="w-3 h-3" /> PROGRESS
+              <div className="bg-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded text-[10px]">PICA CREATED</div>
+              <div className="bg-blue-500 text-white text-xs font-medium px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px]">
+                <Clock className="w-2 h-2" /> PROGRESS
               </div>
-              <div className="bg-green-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" /> COMPLETE
+              <div className="bg-green-500 text-white text-xs font-medium px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px]">
+                <CheckCircle className="w-2 h-2" /> COMPLETE
               </div>
-              <div className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> OVERDUE
+              <div className="bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px]">
+                <AlertCircle className="w-2 h-2" /> OVERDUE
               </div>
             </div>
 
@@ -540,18 +642,18 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Person In Charge Monitor */}
-      <Card className="mt-6">
+      <Card className="mt-4">
         <CardContent className="p-0">
-          <div className="p-3 bg-gray-50 border-b flex justify-between items-center">
-            <h2 className="text-base font-medium text-gray-800">
+          <div className="p-2 bg-gray-50 border-b flex flex-col md:flex-row md:justify-between md:items-center">
+            <h2 className="text-sm font-semibold text-gray-800 mb-2 md:mb-0">
               Person In Charge Monitor
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1">
               <Button 
                 variant={activeFilter === "all" ? "default" : "outline"} 
                 size="sm" 
                 onClick={() => setActiveFilter("all")}
-                className="text-xs h-8"
+                className="text-xs h-7 px-2"
               >
                 All
               </Button>
@@ -559,7 +661,7 @@ const Dashboard: React.FC = () => {
                 variant={activeFilter === "progress" ? "default" : "outline"} 
                 size="sm" 
                 onClick={() => setActiveFilter("progress")}
-                className="text-xs h-8"
+                className="text-xs h-7 px-2"
               >
                 Progress
               </Button>
@@ -567,7 +669,7 @@ const Dashboard: React.FC = () => {
                 variant={activeFilter === "complete" ? "default" : "outline"} 
                 size="sm" 
                 onClick={() => setActiveFilter("complete")}
-                className="text-xs h-8"
+                className="text-xs h-7 px-2"
               >
                 Complete
               </Button>
@@ -575,7 +677,7 @@ const Dashboard: React.FC = () => {
                 variant={activeFilter === "overdue" ? "default" : "outline"} 
                 size="sm" 
                 onClick={() => setActiveFilter("overdue")}
-                className="text-xs h-8"
+                className="text-xs h-7 px-2"
               >
                 Overdue
               </Button>
@@ -588,43 +690,43 @@ const Dashboard: React.FC = () => {
                   <tr>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
-                      Create Date
+                      Date
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Issue
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
-                      Task Progress
+                      Task
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       PIC
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Due Date
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Status
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                      className="px-2 py-1.5 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
                       Action
                     </th>
@@ -636,26 +738,26 @@ const Dashboard: React.FC = () => {
                       .fill(0)
                       .map((_, i) => (
                         <tr key={i}>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-24 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-16 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-28 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-20 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-40 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-28 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-16 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-14 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-24 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-16 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-20 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-14 h-3" />
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <Skeleton className="w-16 h-4" />
+                          <td className="px-2 py-1 whitespace-nowrap">
+                            <Skeleton className="w-12 h-3" />
                           </td>
                         </tr>
                       ))
@@ -663,48 +765,48 @@ const Dashboard: React.FC = () => {
                     // Show current page items
                     getCurrentPageItems().map((pica) => (
                       <tr key={pica.id}>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
                           {pica.date ? format(new Date(pica.date), 'dd MMM yyyy') : '-'}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
-                          {pica.issue.length > 30 
-                            ? `${pica.issue.substring(0, 30)}...` 
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
+                          {pica.issue.length > 25 
+                            ? `${pica.issue.substring(0, 25)}...` 
                             : pica.issue}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
-                          {pica.correctiveAction.length > 40 
-                            ? `${pica.correctiveAction.substring(0, 40)}...` 
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
+                          {pica.correctiveAction.length > 30 
+                            ? `${pica.correctiveAction.substring(0, 30)}...` 
                             : pica.correctiveAction}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
                           {pica.personInCharge?.name}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                        <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-800">
                           {pica.dueDate ? format(new Date(pica.dueDate), 'dd MMM yyyy') : '-'}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs">
+                        <td className="px-2 py-1 whitespace-nowrap text-xs">
                           <StatusBadge status={pica.status} />
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-xs">
+                        <td className="px-2 py-1 whitespace-nowrap text-xs">
                           <div className="flex space-x-1">
                             <Link href={`/pica-progress?picaId=${pica.picaId}`}>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7"
+                                className="h-6 w-6"
                                 title="Edit PICA"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3 w-3" />
                               </Button>
                             </Link>
                             <Link href={`/pica-progress?picaId=${pica.picaId}&action=view`}>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7"
+                                className="h-6 w-6"
                                 title="View Details"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
                                   <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
@@ -718,7 +820,7 @@ const Dashboard: React.FC = () => {
                     <tr>
                       <td
                         colSpan={7}
-                        className="px-3 py-2 text-center text-xs text-gray-500"
+                        className="px-2 py-1 text-center text-xs text-gray-500"
                       >
                         No PICAs found
                       </td>
@@ -729,35 +831,35 @@ const Dashboard: React.FC = () => {
             </div>
             {/* Pagination controls */}
             {filteredPicas.length > 0 && (
-              <div className="flex items-center justify-between border-t border-gray-200 px-3 py-2 mt-2">
-                <div className="flex items-center text-xs text-gray-700">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredPicas.length)} of {filteredPicas.length} items
+              <div className="flex items-center justify-between border-t border-gray-200 px-2 py-1.5 mt-1">
+                <div className="hidden md:flex items-center text-xs text-gray-700">
+                  {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPicas.length)} of {filteredPicas.length}
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 mx-auto md:mx-0">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs"
+                    className="h-6 text-xs px-1.5"
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(currentPage - 1)}
                   >
-                    Previous
+                    Prev
                   </Button>
                   {Array.from({ length: totalPages }, (_, i) => (
                     <Button
                       key={i}
                       variant={currentPage === i + 1 ? "default" : "outline"}
                       size="sm"
-                      className="h-7 w-7 text-xs"
+                      className="h-6 w-6 text-xs"
                       onClick={() => setCurrentPage(i + 1)}
                     >
                       {i + 1}
                     </Button>
-                  )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                  )).slice(Math.max(0, currentPage - 2), Math.min(totalPages, currentPage + 1))}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs"
+                    className="h-6 text-xs px-1.5"
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(currentPage + 1)}
                   >
