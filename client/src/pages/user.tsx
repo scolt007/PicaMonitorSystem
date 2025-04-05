@@ -1,28 +1,25 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { insertUserSchema, userRoleEnum, type User } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
+import Layout from "@/components/layout/Layout";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+
+// UI Components
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,480 +29,569 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Pencil, Trash2, UserPlus } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 
-// Placeholder schema for User management
-// This would need to be added to the shared/schema.ts file
-const formSchema = z.object({
-  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  role: z.string().min(1, { message: "Role is required" }),
+// Form schema
+const formSchema = insertUserSchema.extend({
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters",
+  }),
+  passwordConfirm: z.string(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords don't match",
+  path: ["passwordConfirm"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-// User type - would come from schema.ts
-type User = {
-  id: number;
-  username: string;
-  name: string;
-  email: string;
-  role: string;
-};
+// Edit schema without requiring password
+const editFormSchema = insertUserSchema.extend({
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters",
+  }).optional(),
+  passwordConfirm: z.string().optional(),
+}).refine((data) => !data.password || (data.password === data.passwordConfirm), {
+  message: "Passwords don't match",
+  path: ["passwordConfirm"],
+});
 
-const UserPage = () => {
+type EditFormValues = z.infer<typeof editFormSchema>;
+
+export default function UserPage() {
+  const { user: currentUser, isAdmin, isLoading: authLoading } = useAuth();
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const { toast } = useToast();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
-  // Form for creating/editing users
+  
+  // Fetch all users
+  const { data: users, isLoading } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Form for adding a new user
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
       password: "",
+      passwordConfirm: "",
       name: "",
       email: "",
       role: "user",
     },
   });
-
-  // Get users query
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: () => 
-      // This is a placeholder - would need an actual API endpoint
-      Promise.resolve([
-        { id: 1, username: "admin", name: "Admin User", email: "admin@example.com", role: "admin" },
-        { id: 2, username: "user1", name: "Regular User", email: "user@example.com", role: "user" },
-      ] as User[])
+  
+  // Form for editing a user
+  const editForm = useForm<EditFormValues>({
+    resolver: zodResolver(editFormSchema),
+    defaultValues: {
+      username: "",
+      name: "",
+      email: "",
+      role: "user",
+    },
   });
-
+  
   // Create user mutation
   const createMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      // This is a placeholder - would need an actual API endpoint
-      console.log("Creating user:", data);
-      // Return a simulated response
-      return { id: Math.floor(Math.random() * 1000), ...data };
+      // Remove passwordConfirm before sending to API
+      const { passwordConfirm, ...userData } = data;
+      const res = await apiRequest("POST", "/api/users", userData);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      setCreateDialogOpen(false);
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: "User has been created",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setOpenCreateDialog(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: `Failed to create user: ${error}`,
+        description: error.message,
         variant: "destructive",
       });
     },
   });
-
-  // Edit user mutation
-  const editMutation = useMutation({
-    mutationFn: async (data: FormValues & { id: number }) => {
-      // This is a placeholder - would need an actual API endpoint
-      console.log("Updating user:", data);
-      // Return a simulated response
-      return data;
+  
+  // Update user mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditFormValues & { id: number }) => {
+      const { id, passwordConfirm, ...userData } = data;
+      
+      // Only include password if provided
+      if (!userData.password) {
+        delete userData.password;
+      }
+      
+      const res = await apiRequest("PATCH", `/api/users/${id}`, userData);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      setEditDialogOpen(false);
       toast({
         title: "Success",
-        description: "User updated successfully",
+        description: "User has been updated",
       });
-      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setOpenEditDialog(false);
+      setUserToEdit(null);
+      editForm.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: `Failed to update user: ${error}`,
+        description: error.message,
         variant: "destructive",
       });
     },
   });
-
+  
   // Delete user mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      // This is a placeholder - would need an actual API endpoint
-      console.log("Deleting user:", id);
-      return true;
+      await apiRequest("DELETE", `/api/users/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      setDeleteDialogOpen(false);
       toast({
         title: "Success",
-        description: "User deleted successfully",
+        description: "User has been deleted",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: `Failed to delete user: ${error}`,
+        description: error.message,
         variant: "destructive",
       });
     },
   });
-
+  
+  // Handle form submissions
+  const onSubmitCreate = (data: FormValues) => {
+    createMutation.mutate(data);
+  };
+  
+  const onSubmitEdit = (data: EditFormValues) => {
+    if (!userToEdit) return;
+    updateMutation.mutate({ ...data, id: userToEdit.id });
+  };
+  
+  // Handle edit initialization
   const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    form.reset({
+    setUserToEdit(user);
+    editForm.reset({
       username: user.username,
-      password: "",  // Don't populate password for security reasons
       name: user.name,
       email: user.email,
       role: user.role,
     });
-    setEditDialogOpen(true);
+    setOpenEditDialog(true);
   };
-
+  
+  // Handle delete
   const handleDelete = (user: User) => {
-    setSelectedUser(user);
-    setDeleteDialogOpen(true);
-  };
-
-  const onSubmitCreate = (data: FormValues) => {
-    createMutation.mutate(data);
-  };
-
-  const onSubmitEdit = (data: FormValues) => {
-    if (selectedUser) {
-      editMutation.mutate({ ...data, id: selectedUser.id });
+    if (user.id === currentUser?.id) {
+      toast({
+        title: "Error",
+        description: "You cannot delete your own account",
+        variant: "destructive",
+      });
+      return;
     }
+    deleteMutation.mutate(user.id);
   };
-
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">User Management</h1>
-        <Button onClick={() => { form.reset(); setCreateDialogOpen(true); }}>
-          Add New User
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
+  
+  // Redirect non-admin users
+  const [, setLocation] = useLocation();
+  if (!authLoading && currentUser && !isAdmin) {
+    setLocation('/');
+    return null;
+  }
+  
+  // Loading state
+  if (isLoading || authLoading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <p>Loading...</p>
         </div>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead className="w-[150px]">Username</TableHead>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="w-[100px]">Role</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users && users.length > 0 ? (
-                users.map((user) => (
+      </Layout>
+    );
+  }
+  
+  return (
+    <Layout>
+      <div className="space-y-4 p-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">User Management</h1>
+          <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Add a new user to the system.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmitCreate)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="passwordConfirm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                            <SelectItem value="user">Regular User</SelectItem>
+                            <SelectItem value="public">Public (View Only)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Admin: Full access. User: Can edit data. Public: View only.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button 
+                      type="submit" 
+                      disabled={createMutation.isPending}
+                    >
+                      {createMutation.isPending ? "Creating..." : "Create User"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>User List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableCaption>A list of all users in the system.</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users && Array.isArray(users) && users.map((user: User) => (
                   <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.username}</TableCell>
+                    <TableCell className="font-medium">{user.username}</TableCell>
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(user)}
+                    <TableCell>
+                      <Badge 
+                        variant={user.role === 'admin' ? 'destructive' : user.role === 'user' ? 'default' : 'secondary'}
                       >
-                        <Pencil size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(user)}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
+                        {user.role === 'admin' ? 'Administrator' : user.role === 'user' ? 'Regular User' : 'Public'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.createdAt ? formatDate(user.createdAt) : 'N/A'}</TableCell>
+                    <TableCell>{user.lastLogin ? formatDate(user.lastLogin) : 'Never'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => handleEdit(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              disabled={user.id === currentUser?.id}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the user account for {user.name} ({user.username}).
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(user)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    No users found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Create User Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>
-              Create a new user account with username and password.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitCreate)} className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="username" className="text-sm font-medium">
-                      Username
-                    </label>
-                    <Input
-                      id="username"
-                      {...form.register("username")}
-                      placeholder="Enter username"
-                    />
-                    {form.formState.errors.username && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.username.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium">
-                      Password
-                    </label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...form.register("password")}
-                      placeholder="Enter password"
-                    />
-                    {form.formState.errors.password && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Full Name
-                  </label>
-                  <Input
-                    id="name"
-                    {...form.register("name")}
-                    placeholder="Enter full name"
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.name.message}
-                    </p>
+                ))}
+                
+                {users && Array.isArray(users) && users.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        
+        {/* Edit User Dialog */}
+        <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...form.register("email")}
-                    placeholder="Enter email address"
-                  />
-                  {form.formState.errors.email && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.email.message}
-                    </p>
+                />
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="role" className="text-sm font-medium">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    {...form.register("role")}
-                    className="w-full px-3 py-2 border rounded-md"
+                />
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password (leave blank to keep current)</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="passwordConfirm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                          <SelectItem value="user">Regular User</SelectItem>
+                          <SelectItem value="public">Public (View Only)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Admin: Full access. User: Can edit data. Public: View only.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    disabled={updateMutation.isPending}
                   >
-                    <option value="user">User</option>
-                    <option value="admin">Administrator</option>
-                  </select>
-                  {form.formState.errors.role && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.role.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creating..." : "Create User"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user details and settings.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="username" className="text-sm font-medium">
-                      Username
-                    </label>
-                    <Input
-                      id="username"
-                      {...form.register("username")}
-                      placeholder="Enter username"
-                    />
-                    {form.formState.errors.username && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.username.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium">
-                      Password (leave blank to keep unchanged)
-                    </label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...form.register("password")}
-                      placeholder="Enter new password"
-                    />
-                    {form.formState.errors.password && (
-                      <p className="text-sm text-red-500">
-                        {form.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Full Name
-                  </label>
-                  <Input
-                    id="name"
-                    {...form.register("name")}
-                    placeholder="Enter full name"
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...form.register("email")}
-                    placeholder="Enter email address"
-                  />
-                  {form.formState.errors.email && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.email.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="role" className="text-sm font-medium">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    {...form.register("role")}
-                    className="w-full px-3 py-2 border rounded-md"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Administrator</option>
-                  </select>
-                  {form.formState.errors.role && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.role.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={editMutation.isPending}>
-                  {editMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete User Confirmation */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => selectedUser && deleteMutation.mutate(selectedUser.id)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+                    {updateMutation.isPending ? "Updating..." : "Update User"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </Layout>
   );
-};
-
-export default UserPage;
+}

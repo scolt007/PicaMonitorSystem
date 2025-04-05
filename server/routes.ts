@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertPicaSchema, insertPersonSchema, insertDepartmentSchema, insertProjectSiteSchema, insertUserSchema } from "@shared/schema";
-import { setupAuth, canEdit, canDelete } from "./auth";
+import { setupAuth, canEdit, canDelete, hashPassword } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -476,8 +476,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new user (admin only)
   app.post(`${apiPrefix}/users`, canDelete, async (req, res) => {
     try {
-      // Create hash of password in auth.ts during registration, not here
       const userData = insertUserSchema.parse(req.body);
+      
+      // Hash the password before storing it
+      userData.password = await hashPassword(userData.password);
+      
       const user = await storage.createUser(userData);
       
       // Don't send password back to client
@@ -492,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a user (admin only)
-  app.put(`${apiPrefix}/users/:id`, canDelete, async (req, res) => {
+  app.patch(`${apiPrefix}/users/:id`, canDelete, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -501,11 +504,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userData = insertUserSchema.partial().parse(req.body);
       
-      // Handle password update specially
+      // If password is provided, we need to hash it before storage
       if (userData.password) {
-        // Password should be hashed by auth handler before storage
-        // This route should not allow password changes, use a separate endpoint
-        delete userData.password;
+        userData.password = await hashPassword(userData.password);
       }
       
       const updatedUser = await storage.updateUser(id, userData);
