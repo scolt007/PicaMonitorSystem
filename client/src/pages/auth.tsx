@@ -23,7 +23,6 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   passwordConfirm: z.string().min(6, "Confirm password is required"),
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("Invalid email address"),
   signupCode: z.string().optional(),
   organizationName: z.string().optional(),
 }).refine((data) => data.password === data.passwordConfirm, {
@@ -62,7 +61,6 @@ const AuthPage = () => {
       password: "",
       passwordConfirm: "",
       name: "",
-      email: "",
       signupCode: "",
       organizationName: "",
     },
@@ -79,9 +77,7 @@ const AuthPage = () => {
       username: data.username,
       password: data.password,
       name: data.name,
-      email: data.email,
-      signupCode: data.signupCode,
-      organizationName: data.organizationName,
+      email: `${data.username}@picamonitor.com`, // Generate generic email
       role: "user", // Default role for new registrations
     });
   };
@@ -187,18 +183,7 @@ const AuthPage = () => {
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium">Email</label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        {...registerForm.register("email")}
-                      />
-                      {registerForm.formState.errors.email && (
-                        <p className="text-sm text-red-500">{registerForm.formState.errors.email.message}</p>
-                      )}
-                    </div>
+
 
                     <div className="space-y-2">
                       <label htmlFor="reg-username" className="text-sm font-medium">Username</label>
@@ -240,14 +225,14 @@ const AuthPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="signup-code" className="text-sm font-medium">Signup Code (Optional)</label>
+                      <label htmlFor="signup-code" className="text-sm font-medium">Signup Code (Validation)</label>
                       <Input
                         id="signup-code"
                         type="text"
-                        placeholder="Enter special code: 12345ABC04052025"
+                        placeholder="Enter Signup Validation Code"
                         {...registerForm.register("signupCode")}
                       />
-                      <p className="text-xs text-gray-500">Enter code 12345ABC + today's date (MMDDYYYY) for admin privileges</p>
+                      <p className="text-xs text-gray-500">Ask the Developer</p>
                       {registerForm.formState.errors.signupCode && (
                         <p className="text-sm text-red-500">{registerForm.formState.errors.signupCode.message}</p>
                       )}
