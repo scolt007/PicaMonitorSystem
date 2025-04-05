@@ -315,23 +315,23 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-0.5 max-w-[1200px] mx-auto">
-      <div className="flex justify-between items-center mb-1">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-1 gap-2 md:gap-0">
         <h1 className="text-lg font-semibold text-gray-800">Dashboard PICA</h1>
-        <div className="flex items-center gap-1 text-xs">
-          <span className="font-medium">FILTER:</span>
-          <div className="flex">
+        <div className="flex flex-wrap items-center gap-1 text-xs">
+          <span className="font-medium mr-1">FILTER:</span>
+          <div className="flex flex-wrap">
             <Input 
               type="date" 
               value={dateRange.start}
               onChange={(e) => handleDateChange('start', e.target.value)}
-              className="h-6 w-24 text-xs px-1 py-0"
+              className="h-6 w-[120px] text-xs px-1 py-0"
             />
             <span className="flex items-center px-1">-</span>
             <Input 
               type="date" 
               value={dateRange.end}
               onChange={(e) => handleDateChange('end', e.target.value)}
-              className="h-6 w-24 text-xs px-1 py-0"
+              className="h-6 w-[120px] text-xs px-1 py-0"
             />
           </div>
         </div>
@@ -339,19 +339,19 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-12 gap-1">
         {/* Status Cards Row */}
-        <div className="col-span-12 grid grid-cols-4 gap-1">
+        <div className="col-span-12 grid grid-cols-2 md:grid-cols-4 gap-1">
           {/* In Progress Card */}
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-lg font-bold text-primary mr-1">
+              <h3 className="text-base md:text-lg font-bold text-primary mr-1">
                 {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
                   filteredStats.progress
                 )}
               </h3>
-              <p className="text-xs font-medium text-gray-500">In Progress</p>
-              <div className="ml-auto p-1 bg-blue-100 rounded-full">
+              <p className="text-[10px] md:text-xs font-medium text-gray-500">In Progress</p>
+              <div className="ml-auto p-1 bg-blue-100 rounded-full hidden md:flex">
                 <Clock className="h-4 w-4 text-blue-600" />
               </div>
             </div>
@@ -360,15 +360,15 @@ const Dashboard: React.FC = () => {
           {/* Completed Card */}
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-lg font-bold text-green-600 mr-1">
+              <h3 className="text-base md:text-lg font-bold text-green-600 mr-1">
                 {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
                   filteredStats.complete
                 )}
               </h3>
-              <p className="text-xs font-medium text-gray-500">Completed</p>
-              <div className="ml-auto p-1 bg-green-100 rounded-full">
+              <p className="text-[10px] md:text-xs font-medium text-gray-500">Completed</p>
+              <div className="ml-auto p-1 bg-green-100 rounded-full hidden md:flex">
                 <CheckCircle className="h-4 w-4 text-green-600" />
               </div>
             </div>
@@ -377,15 +377,15 @@ const Dashboard: React.FC = () => {
           {/* Overdue Card */}
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-lg font-bold text-red-600 mr-1">
+              <h3 className="text-base md:text-lg font-bold text-red-600 mr-1">
                 {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
                   filteredStats.overdue
                 )}
               </h3>
-              <p className="text-xs font-medium text-gray-500">Overdue</p>
-              <div className="ml-auto p-1 bg-red-100 rounded-full">
+              <p className="text-[10px] md:text-xs font-medium text-gray-500">Overdue</p>
+              <div className="ml-auto p-1 bg-red-100 rounded-full hidden md:flex">
                 <AlertCircle className="h-4 w-4 text-red-600" />
               </div>
             </div>
@@ -394,15 +394,15 @@ const Dashboard: React.FC = () => {
           {/* Total PICA Card */}
           <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-lg font-bold text-gray-800 mr-1">
+              <h3 className="text-base md:text-lg font-bold text-gray-800 mr-1">
                 {statsLoading || !filteredStats ? (
                   <Skeleton className="h-4 w-8" />
                 ) : (
                   filteredStats.total
                 )}
               </h3>
-              <p className="text-xs font-medium text-gray-500">Total PICA</p>
-              <div className="ml-auto p-1 bg-gray-100 rounded-full">
+              <p className="text-[10px] md:text-xs font-medium text-gray-500">Total PICA</p>
+              <div className="ml-auto p-1 bg-gray-100 rounded-full hidden md:flex">
                 <Calendar className="h-4 w-4 text-gray-600" />
               </div>
             </div>
@@ -411,9 +411,9 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Calendar and Project Site Chart Row */}
-      <div className="grid grid-cols-12 gap-1 mt-1 mb-1">
-        {/* Project Site Summary - Left Column */}
-        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1 mt-1 mb-1">
+        {/* Project Site Summary - Full width on mobile, left column on larger screens */}
+        <div className="md:col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-2">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Project Site Summary</h3>
           </div>
@@ -457,14 +457,14 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Calendar - Right Column */}
-        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+        {/* Calendar - Right Column on desktop/tablet, full width on mobile */}
+        <div className="md:col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-2 mt-1 md:mt-0">
           {/* Calendar Header */}
-          <div className="flex justify-between items-center mb-1">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-1">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 mb-1 md:mb-0">
               <h3 className="text-sm font-semibold">Calendar View</h3>
-              {/* Legend Inline */}
-              <div className="flex ml-2 items-center gap-1 text-xs">
+              {/* Legend Inline for desktop, stacked for mobile */}
+              <div className="flex flex-wrap md:ml-2 items-center gap-1 text-[10px] md:text-xs mt-1 md:mt-0">
                 <div className="bg-yellow-300 text-black px-1 rounded">CREATE</div>
                 <div className="bg-blue-500 text-white px-1 rounded">PROGRESS</div>
                 <div className="bg-green-500 text-white px-1 rounded">COMPLETE</div>
@@ -564,11 +564,11 @@ const Dashboard: React.FC = () => {
 
       {/* Person In Charge Monitor */}
       <div className="bg-white border border-gray-100 rounded-md shadow-sm">
-        <div className="p-1.5 bg-gray-50 border-b flex flex-row justify-between items-center">
-          <h2 className="text-sm font-semibold text-gray-800">
+        <div className="p-1.5 bg-gray-50 border-b flex flex-col md:flex-row md:justify-between md:items-center">
+          <h2 className="text-sm font-semibold text-gray-800 mb-1 md:mb-0">
             Person In Charge Monitor
           </h2>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <Button 
               variant={activeFilter === "all" ? "default" : "outline"} 
               size="sm" 
@@ -604,7 +604,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="p-1">
-          <div className="overflow-x-auto">
+          {/* Table for desktop and tablet - hidden on mobile */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-primary">
                 <tr>
@@ -756,6 +757,87 @@ const Dashboard: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+          
+          {/* Mobile view with card-based layout */}
+          <div className="md:hidden space-y-2">
+            {picasLoading ? (
+              // Loading skeleton for mobile
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="bg-white rounded shadow p-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Skeleton className="w-16 h-4" />
+                    <Skeleton className="w-20 h-5" />
+                  </div>
+                  <Skeleton className="w-full h-5" />
+                  <Skeleton className="w-full h-4" />
+                  <div className="flex justify-between items-center pt-1">
+                    <Skeleton className="w-24 h-4" />
+                    <div className="flex space-x-1">
+                      <Skeleton className="w-14 h-7" />
+                      <Skeleton className="w-14 h-7" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : filteredPicas.length > 0 ? (
+              // Mobile card view
+              getCurrentPageItems().map((pica) => (
+                <div key={pica.id} className="bg-white rounded shadow p-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs font-medium text-gray-800">
+                      {pica.picaId} <span className="text-gray-500">({pica.date ? format(new Date(pica.date), 'dd/MM/yy') : '-'})</span>
+                    </div>
+                    <StatusBadge status={pica.status} size="xs" />
+                  </div>
+                  
+                  <div className="text-sm font-medium text-gray-900">
+                    {pica.issue}
+                  </div>
+                  
+                  <div className="text-xs text-gray-700">
+                    <span className="font-medium">Task:</span> {pica.correctiveAction}
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-1">
+                    <div className="text-xs text-gray-600">
+                      <span className="font-medium">PIC:</span> {pica.personInCharge?.name}<br />
+                      <span className="font-medium">Due:</span> {pica.dueDate ? format(new Date(pica.dueDate), 'dd/MM/yy') : '-'}
+                    </div>
+                    
+                    <div className="flex space-x-1">
+                      <Link href={`/pica-progress?picaId=${pica.picaId}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          title="Edit PICA"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </Link>
+                      <Link href={`/pica-progress?picaId=${pica.picaId}&action=view`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          title="View Details"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white rounded shadow p-4 text-center text-sm text-gray-500">
+                No PICAs found
+              </div>
+            )}
           </div>
           {/* Pagination controls */}
           {filteredPicas && filteredPicas.length > 0 && (
