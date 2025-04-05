@@ -78,6 +78,8 @@ const AuthPage = () => {
       password: data.password,
       name: data.name,
       email: `${data.username}@picamonitor.com`, // Generate generic email
+      signupCode: data.signupCode,
+      organizationName: data.organizationName,
       role: "user", // Default role for new registrations
     });
   };
