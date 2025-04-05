@@ -57,9 +57,9 @@ const Sidebar = () => {
           <nav className="flex-1 mt-6 px-4 space-y-1">
             {navigationItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <a
+                <div
                   className={cn(
-                    "group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                    "group flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-150 ease-in-out cursor-pointer",
                     (location === item.href || (item.href === "/dashboard" && location === "/"))
                       ? "bg-primary/10 text-primary font-medium" 
                       : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -67,7 +67,7 @@ const Sidebar = () => {
                 >
                   {item.icon}
                   {item.label}
-                </a>
+                </div>
               </Link>
             ))}
 
@@ -91,9 +91,9 @@ const Sidebar = () => {
                 <div className="ml-4 mt-1 space-y-1 border-l border-slate-800 pl-4">
                   {dataSettingItems.map((item) => (
                     <Link key={item.href} href={item.href}>
-                      <a
+                      <div
                         className={cn(
-                          "group flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                          "group flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out cursor-pointer",
                           location === item.href
                             ? "bg-primary/10 text-primary font-medium" 
                             : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -101,7 +101,7 @@ const Sidebar = () => {
                       >
                         {item.icon}
                         {item.label}
-                      </a>
+                      </div>
                     </Link>
                   ))}
                 </div>

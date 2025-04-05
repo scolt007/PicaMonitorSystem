@@ -119,10 +119,10 @@ const MobileMenu = () => {
           <nav className="px-2 py-4 space-y-1">
             {navigationItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <a
+                <div
                   onClick={closeMenu}
                   className={cn(
-                    "flex items-center px-3 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                    "flex items-center px-3 py-2.5 text-sm rounded-lg transition-all duration-150 ease-in-out cursor-pointer",
                     (location === item.href || (item.href === "/dashboard" && location === "/"))
                       ? "bg-primary/10 text-primary font-medium" 
                       : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -130,7 +130,7 @@ const MobileMenu = () => {
                 >
                   {item.icon}
                   {item.label}
-                </a>
+                </div>
               </Link>
             ))}
 
@@ -154,10 +154,10 @@ const MobileMenu = () => {
                 <div className="ml-3 mt-1 space-y-1 border-l border-slate-800 pl-3">
                   {dataSettingItems.map((item) => (
                     <Link key={item.href} href={item.href}>
-                      <a
+                      <div
                         onClick={closeMenu}
                         className={cn(
-                          "flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-150 ease-in-out",
+                          "flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-150 ease-in-out cursor-pointer",
                           location === item.href
                             ? "bg-primary/10 text-primary font-medium" 
                             : "text-slate-300 hover:text-white hover:bg-slate-800"
@@ -165,7 +165,7 @@ const MobileMenu = () => {
                       >
                         {item.icon}
                         {item.label}
-                      </a>
+                      </div>
                     </Link>
                   ))}
                 </div>
