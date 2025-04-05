@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, date, timestamp, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, date, timestamp, primaryKey, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -9,22 +9,25 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   departmentId: integer("department_id"),
+  organizationId: integer("organization_id"), // Associated organization
 });
 
 // Department
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
+  name: text("name").notNull(),
   headId: integer("head_id"),
+  organizationId: integer("organization_id"), // Associated organization
 });
 
 // Project Site
 export const projectSites = pgTable("project_sites", {
   id: serial("id").primaryKey(),
-  code: text("code").notNull().unique(),
+  code: text("code").notNull(),
   name: text("name").notNull(),
   location: text("location"),
   managerId: integer("manager_id"),
+  organizationId: integer("organization_id"), // Associated organization
 });
 
 // PICA Status enum
@@ -34,7 +37,7 @@ export type PicaStatus = z.infer<typeof picaStatusEnum>;
 // PICA record
 export const picas = pgTable("picas", {
   id: serial("id").primaryKey(),
-  picaId: text("pica_id").notNull().unique(), // e.g., 2504NPR01
+  picaId: text("pica_id").notNull(), // Made non-unique as it needs to be unique per organization
   projectSiteId: integer("project_site_id").notNull(),
   date: date("date").notNull(),
   issue: text("issue").notNull(),
@@ -43,6 +46,7 @@ export const picas = pgTable("picas", {
   personInChargeId: integer("person_in_charge_id").notNull(),
   dueDate: date("due_date").notNull(),
   status: text("status").notNull().default("progress"), // progress, complete, overdue
+  organizationId: integer("organization_id"), // Associated organization
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -50,6 +54,17 @@ export const picas = pgTable("picas", {
 // User roles enum
 export const userRoleEnum = z.enum(["admin", "user", "public"]);
 export type UserRole = z.infer<typeof userRoleEnum>;
+
+// Organizations table for subscription-based accounts
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Company/Organization name
+  hasPaid: boolean("has_paid").notNull().default(false),
+  subscriptionActive: boolean("subscription_active").notNull().default(false),
+  paymentDate: timestamp("payment_date"),
+  promoCode: text("promo_code"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
 // Users for authentication
 export const users = pgTable("users", {
@@ -59,6 +74,8 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   role: text("role").notNull().default("user"), // admin, user, public
+  isOrganizationAdmin: boolean("is_organization_admin").default(false), // Identifies the main admin of an organization
+  organizationId: integer("organization_id").references(() => organizations.id), // Reference to organization
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastLogin: timestamp("last_login"),
 });
@@ -124,6 +141,15 @@ export const picaHistoryRelations = relations(picaHistory, ({ one }) => ({
   }),
 }));
 
+// Organization relations
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+  people: many(people),
+  departments: many(departments),
+  projectSites: many(projectSites),
+  picas: many(picas),
+}));
+
 // Insert schemas and types
 export const insertPersonSchema = createInsertSchema(people).omit({
   id: true,
@@ -184,3 +210,13 @@ export type PicaHistory = typeof picaHistory.$inferSelect;
 export type PicaHistoryWithRelations = PicaHistory & {
   user?: User;
 };
+
+// Organization schema and types
+export const insertOrganizationSchema = createInsertSchema(organizations).omit({
+  id: true,
+  createdAt: true,
+  paymentDate: true,
+});
+
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type Organization = typeof organizations.$inferSelect;

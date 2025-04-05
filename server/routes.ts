@@ -2,14 +2,28 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertPicaSchema, insertPersonSchema, insertDepartmentSchema, insertProjectSiteSchema, insertUserSchema } from "@shared/schema";
+import { 
+  insertPicaSchema, 
+  insertPersonSchema, 
+  insertDepartmentSchema, 
+  insertProjectSiteSchema, 
+  insertUserSchema,
+  insertOrganizationSchema
+} from "@shared/schema";
 import { setupAuth, canEdit, canDelete, hashPassword } from "./auth";
+import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   // API prefix
   const apiPrefix = '/api';
+  
+  // Initialize Stripe if secret key is provided
+  let stripe: Stripe | undefined;
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
   
   // --- PICA Routes ---
   // Get all PICAs with relations (public can view)
@@ -547,6 +561,203 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "User deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // --- Organization Routes ---
+  // Get all organizations (admin only)
+  app.get(`${apiPrefix}/organizations`, canDelete, async (req, res) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      res.json(organizations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve organizations" });
+    }
+  });
+
+  // Get a single organization
+  app.get(`${apiPrefix}/organizations/:id`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const organization = await storage.getOrganization(id);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      res.json(organization);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve organization" });
+    }
+  });
+  
+  // Create a new organization (public route for registration)
+  app.post(`${apiPrefix}/organizations`, async (req, res) => {
+    try {
+      const { promoCode, ...organizationData } = insertOrganizationSchema.parse(req.body);
+      
+      // Set initial values for registration
+      const newOrgData = {
+        ...organizationData,
+        hasPaid: false,
+        subscriptionActive: false,
+        promoCode: promoCode || null
+      };
+      
+      // Validate the promo code if provided
+      if (promoCode) {
+        const isValidPromo = await storage.validatePromoCode(promoCode);
+        if (isValidPromo) {
+          // If promo code is valid, set hasPaid to true
+          // Our updateOrganization method will automatically set the payment date
+          newOrgData.hasPaid = true; 
+          newOrgData.subscriptionActive = true;
+        }
+      }
+      
+      const organization = await storage.createOrganization(newOrgData);
+      res.status(201).json(organization);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid organization data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create organization" });
+    }
+  });
+
+  // Update an organization (admin only)
+  app.put(`${apiPrefix}/organizations/:id`, canDelete, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const organizationData = insertOrganizationSchema.partial().parse(req.body);
+      const updatedOrganization = await storage.updateOrganization(id, organizationData);
+      
+      if (!updatedOrganization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      res.json(updatedOrganization);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid organization data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update organization" });
+    }
+  });
+
+  // Delete an organization (admin only)
+  app.delete(`${apiPrefix}/organizations/:id`, canDelete, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const success = await storage.deleteOrganization(id);
+      if (!success) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      res.json({ message: "Organization deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete organization" });
+    }
+  });
+
+  // --- Payment Routes ---
+  // Create a payment intent for the one-time registration fee
+  app.post(`${apiPrefix}/create-payment-intent`, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ 
+          message: "Stripe is not configured. Contact administrator." 
+        });
+      }
+
+      // Fixed amount for the one-time registration fee: $10.00
+      const amount = 1000; // in cents
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: "usd",
+        // Payment metadata with description
+        metadata: {
+          description: "PICA Monitor Registration Fee"
+        }
+      });
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        amount: amount / 100 // Convert back to dollars for display
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: `Error creating payment intent: ${error.message}` 
+      });
+    }
+  });
+
+  // Confirm organization payment
+  app.post(`${apiPrefix}/confirm-payment/:id`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid organization ID" });
+      }
+      
+      const organization = await storage.getOrganization(id);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Update the organization payment status
+      // Note: paymentDate will be set in the backend via direct SQL as it's not in the schema
+      const updatedOrganization = await storage.updateOrganization(id, {
+        hasPaid: true,
+        subscriptionActive: true
+      });
+      
+      // Update payment date directly via SQL if needed (this would be implemented in the storage layer)
+      
+      res.json({ 
+        success: true, 
+        organization: updatedOrganization 
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: `Payment confirmation error: ${error.message}` 
+      });
+    }
+  });
+
+  // Validate a promo code
+  app.post(`${apiPrefix}/validate-promo-code`, async (req, res) => {
+    try {
+      const { promoCode } = req.body;
+      
+      if (!promoCode) {
+        return res.status(400).json({ 
+          message: "No promo code provided" 
+        });
+      }
+      
+      const isValid = await storage.validatePromoCode(promoCode);
+      
+      res.json({ 
+        valid: isValid,
+        message: isValid ? "Promo code is valid" : "Invalid promo code"
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: `Error validating promo code: ${error.message}` 
+      });
     }
   });
 
