@@ -256,33 +256,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePica(id: number, pica: Partial<InsertPica>, historyComment?: string): Promise<Pica | undefined> {
-    // If status is changing, record history
-    if (pica.status) {
-      const currentPica = await this.getPica(id);
-      if (currentPica && currentPica.status !== pica.status) {
-        // Create history entry for the status change
-        await this.addPicaHistory({
-          picaId: id,
-          userId: 1, // Default to first user for now, in a real app this would come from auth
-          oldStatus: currentPica.status,
-          newStatus: pica.status,
-          comment: historyComment || `Status changed from ${currentPica.status} to ${pica.status}`
-        });
+    try {
+      // Check if user with ID 1 exists, otherwise history tracking will fail
+      const [defaultUser] = await db.select().from(users).where(eq(users.id, 1));
+      let userId = defaultUser ? 1 : null;
+
+      // If status is changing, record history
+      if (pica.status) {
+        const currentPica = await this.getPica(id);
+        if (currentPica && currentPica.status !== pica.status) {
+          // Create history entry for the status change
+          await this.addPicaHistory({
+            picaId: id,
+            userId: userId, // Use null if user doesn't exist (userId is optional in schema)
+            oldStatus: currentPica.status,
+            newStatus: pica.status,
+            comment: historyComment || `Status changed from ${currentPica.status} to ${pica.status}`
+          });
+        }
       }
+      
+      // Always update the updatedAt timestamp when updating a PICA
+      // Unless it's explicitly provided in the pica object
+      const updateData: any = {
+        ...pica,
+        updatedAt: (pica as any).updatedAt || new Date()
+      };
+      
+      const [updatedPica] = await db
+        .update(picas)
+        .set(updateData)
+        .where(eq(picas.id, id))
+        .returning();
+      return updatedPica || undefined;
+    } catch (error) {
+      console.error("Error in updatePica:", error);
+      // Just update the PICA itself without history if there's an error with history
+      const updateData: any = {
+        ...pica,
+        updatedAt: (pica as any).updatedAt || new Date()
+      };
+      
+      const [updatedPica] = await db
+        .update(picas)
+        .set(updateData)
+        .where(eq(picas.id, id))
+        .returning();
+      return updatedPica || undefined;
     }
-    
-    // Always update the updatedAt timestamp when updating a PICA
-    const updateData = {
-      ...pica,
-      updatedAt: new Date()
-    };
-    
-    const [updatedPica] = await db
-      .update(picas)
-      .set(updateData)
-      .where(eq(picas.id, id))
-      .returning();
-    return updatedPica || undefined;
   }
 
   async deletePica(id: number): Promise<boolean> {

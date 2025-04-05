@@ -110,8 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract comment and updateDate from the request if present
       const { comment, updateDate, ...restData } = req.body;
       
-      // Create a copy of the data to be updated
-      let picaData = { ...insertPicaSchema.partial().parse(restData) };
+      // Create a copy of the data to be updated with type assertion
+      let picaData: any = { ...insertPicaSchema.partial().parse(restData) };
       
       // If updateDate is provided, use it to set the updatedAt field
       if (updateDate) {
