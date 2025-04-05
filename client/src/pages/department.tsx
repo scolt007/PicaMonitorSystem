@@ -1,0 +1,415 @@
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { z } from "zod";
+import { insertDepartmentSchema } from "@shared/schema";
+
+const formSchema = insertDepartmentSchema.extend({
+  headId: z.number().nullable(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+type Department = {
+  id: number;
+  name: string;
+  headId: number | null;
+};
+
+type Person = {
+  id: number;
+  name: string;
+};
+
+const Department: React.FC = () => {
+  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+
+  // Fetch departments
+  const { data: departments, isLoading } = useQuery<Department[]>({
+    queryKey: ["/api/departments"],
+  });
+
+  // Fetch people for department head selection
+  const { data: people } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
+  });
+
+  // Form for creating/editing departments
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      headId: null,
+    },
+  });
+
+  // Create department mutation
+  const createDepartment = useMutation({
+    mutationFn: async (data: FormValues) => {
+      return apiRequest("POST", "/api/departments", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Success",
+        description: "Department created successfully",
+      });
+      setIsAddDialogOpen(false);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create department",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update department mutation
+  const updateDepartment = useMutation({
+    mutationFn: async (data: FormValues) => {
+      if (!selectedDepartment) throw new Error("No department selected");
+      return apiRequest("PUT", `/api/departments/${selectedDepartment.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Success",
+        description: "Department updated successfully",
+      });
+      setIsEditDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update department",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete department mutation
+  const deleteDepartment = useMutation({
+    mutationFn: async () => {
+      if (!selectedDepartment) throw new Error("No department selected");
+      return apiRequest("DELETE", `/api/departments/${selectedDepartment.id}`, undefined);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Success",
+        description: "Department deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete department",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle add button click
+  const handleAdd = () => {
+    form.reset({
+      name: "",
+      headId: null,
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  // Handle edit button click
+  const handleEdit = (department: Department) => {
+    setSelectedDepartment(department);
+    form.reset({
+      name: department.name,
+      headId: department.headId,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle delete button click
+  const handleDelete = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Handle form submission for creating
+  const onSubmitCreate = (data: FormValues) => {
+    createDepartment.mutate(data);
+  };
+
+  // Handle form submission for editing
+  const onSubmitEdit = (data: FormValues) => {
+    updateDepartment.mutate(data);
+  };
+
+  // Find department head name by ID
+  const getDepartmentHeadName = (headId: number | null) => {
+    if (!headId) return "-";
+    const person = people?.find((p) => p.id === headId);
+    return person ? person.name : "-";
+  };
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">Department</h1>
+      </div>
+
+      <Card className="shadow">
+        <CardContent className="p-6">
+          <div className="mb-4">
+            <Button
+              className="bg-primary hover:bg-blue-700 text-white font-medium"
+              onClick={handleAdd}
+            >
+              Add New Department
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">ID</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Department Name</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Head of Department</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  // Show skeleton while loading
+                  Array(3).fill(0).map((_, i) => (
+                    <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-16" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-32" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                    </tr>
+                  ))
+                ) : departments && departments.length > 0 ? (
+                  // Show departments data
+                  departments.map((department, index) => (
+                    <tr key={department.id} className={index % 2 === 0 ? "bg-gray-50" : ""}>
+                      <td className="py-2 px-4 border-b text-sm">DEPT{String(department.id).padStart(3, '0')}</td>
+                      <td className="py-2 px-4 border-b text-sm">{department.name}</td>
+                      <td className="py-2 px-4 border-b text-sm">{getDepartmentHeadName(department.headId)}</td>
+                      <td className="py-2 px-4 border-b text-sm">
+                        <div className="flex space-x-2">
+                          <button
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => handleEdit(department)}
+                          >
+                            Edit
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            className="text-red-600 hover:text-red-800"
+                            onClick={() => handleDelete(department)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  // Show no data message
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                      No departments found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Add Department Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Department</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitCreate)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter department name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="headId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Head of Department</FormLabel>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select head of department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {people?.map((person) => (
+                          <SelectItem key={person.id} value={person.id.toString()}>
+                            {person.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createDepartment.isPending}>
+                  {createDepartment.isPending ? "Adding..." : "Add Department"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Department</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter department name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="headId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Head of Department</FormLabel>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select head of department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {people?.map((person) => (
+                          <SelectItem key={person.id} value={person.id.toString()}>
+                            {person.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateDepartment.isPending}>
+                  {updateDepartment.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p>
+            Are you sure you want to delete <strong>{selectedDepartment?.name}</strong> department? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteDepartment.mutate()}
+              disabled={deleteDepartment.isPending}
+            >
+              {deleteDepartment.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Department;
