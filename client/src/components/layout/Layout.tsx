@@ -1,18 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import MobileMenu from "./MobileMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Desktop sidebar */}
-      <Sidebar />
+      {/* Only render desktop sidebar on non-mobile devices */}
+      {!isMobile && <Sidebar />}
       
-      {/* Mobile hamburger menu and sidebar */}
+      {/* Mobile hamburger menu and sidebar - only for mobile */}
       <MobileMenu />
 
       <div className="flex flex-col flex-1 overflow-hidden">
