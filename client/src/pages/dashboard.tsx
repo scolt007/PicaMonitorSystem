@@ -106,16 +106,132 @@ const Dashboard: React.FC = () => {
     }));
   };
 
+  // Calculate statistics based on filtered PICAs
+  const calcFilteredStats = React.useMemo(() => {
+    if (!picas) return { progress: 0, complete: 0, overdue: 0, total: 0 };
+    
+    // Filter by date range if both dates are set
+    let filtered = picas;
+    if (dateRange.start && dateRange.end) {
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end day
+      
+      filtered = filtered.filter((pica) => {
+        const picaDate = new Date(pica.date);
+        return picaDate >= startDate && picaDate <= endDate;
+      });
+    }
+    
+    const progress = filtered.filter(pica => pica.status === 'progress').length;
+    const complete = filtered.filter(pica => pica.status === 'complete').length;
+    const overdue = filtered.filter(pica => pica.status === 'overdue').length;
+    
+    return {
+      progress,
+      complete,
+      overdue,
+      total: filtered.length
+    };
+  }, [picas, dateRange]);
+  
+  // Calculate department statistics based on date-filtered PICAs
+  const calcFilteredDeptStats = React.useMemo(() => {
+    if (!picas || !deptStats) return [];
+    
+    // Filter by date range
+    let filtered = picas;
+    if (dateRange.start && dateRange.end) {
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end day
+      
+      filtered = filtered.filter((pica) => {
+        const picaDate = new Date(pica.date);
+        return picaDate >= startDate && picaDate <= endDate;
+      });
+    }
+    
+    // Group by department
+    const deptMap: Record<string, { department: string, progress: number, complete: number, overdue: number }> = {};
+    
+    // Initialize with existing departments
+    deptStats.forEach((dept: any) => {
+      deptMap[dept.department] = { 
+        department: dept.department, 
+        progress: 0, 
+        complete: 0, 
+        overdue: 0 
+      };
+    });
+    
+    // Count PICAs by department and status
+    filtered.forEach(pica => {
+      const deptName = pica.personInCharge?.department?.name || 'Unknown';
+      
+      if (!deptMap[deptName]) {
+        deptMap[deptName] = { department: deptName, progress: 0, complete: 0, overdue: 0 };
+      }
+      
+      if (pica.status === 'progress') deptMap[deptName].progress++;
+      if (pica.status === 'complete') deptMap[deptName].complete++;
+      if (pica.status === 'overdue') deptMap[deptName].overdue++;
+    });
+    
+    return Object.values(deptMap);
+  }, [picas, deptStats, dateRange]);
+  
+  // Calculate site statistics based on filtered PICAs
+  const calcFilteredSiteStats = React.useMemo(() => {
+    if (!picas || !siteStats) return [];
+    
+    // Filter by date range
+    let filtered = picas;
+    if (dateRange.start && dateRange.end) {
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end day
+      
+      filtered = filtered.filter((pica) => {
+        const picaDate = new Date(pica.date);
+        return picaDate >= startDate && picaDate <= endDate;
+      });
+    }
+    
+    // Group by site
+    const siteMap: Record<string, { site: string, progress: number, complete: number, overdue: number }> = {};
+    
+    // Initialize with existing sites
+    siteStats.forEach((site: any) => {
+      siteMap[site.site] = { 
+        site: site.site, 
+        progress: 0, 
+        complete: 0, 
+        overdue: 0 
+      };
+    });
+    
+    // Count PICAs by site and status
+    filtered.forEach(pica => {
+      const siteName = pica.projectSite?.code || 'Unknown';
+      
+      if (!siteMap[siteName]) {
+        siteMap[siteName] = { site: siteName, progress: 0, complete: 0, overdue: 0 };
+      }
+      
+      if (pica.status === 'progress') siteMap[siteName].progress++;
+      if (pica.status === 'complete') siteMap[siteName].complete++;
+      if (pica.status === 'overdue') siteMap[siteName].overdue++;
+    });
+    
+    return Object.values(siteMap);
+  }, [picas, siteStats, dateRange]);
+
   // Filter PICAs by status and date range
   const filteredPicas = React.useMemo(() => {
     if (!picas) return [];
     
     let filtered = picas;
-    
-    // Filter by status
-    if (activeFilter !== "all") {
-      filtered = filtered.filter((pica) => pica.status === activeFilter);
-    }
     
     // Filter by date range if both dates are set
     if (dateRange.start && dateRange.end) {
@@ -127,6 +243,11 @@ const Dashboard: React.FC = () => {
         const picaDate = new Date(pica.date);
         return picaDate >= startDate && picaDate <= endDate;
       });
+    }
+    
+    // Filter by status
+    if (activeFilter !== "all") {
+      filtered = filtered.filter((pica) => pica.status === activeFilter);
     }
     
     return filtered;
@@ -170,7 +291,7 @@ const Dashboard: React.FC = () => {
                   <Skeleton className="w-[200px] h-[200px] rounded-full" />
                 ) : (
                   <PieChart
-                    data={[stats?.progress || 0, stats?.complete || 0, stats?.overdue || 0]}
+                    data={[calcFilteredStats.progress, calcFilteredStats.complete, calcFilteredStats.overdue]}
                     labels={["Progress", "Complete", "Overdue"]}
                     colors={["#2563eb", "#f97316", "#9ca3af"]}
                   />
@@ -178,16 +299,16 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="w-full md:w-1/2 flex flex-col justify-center pl-0 md:pl-4">
                 <div className="mb-2 text-lg font-medium">
-                  Created : <span className="font-semibold">{stats?.total || 0}</span>
+                  Created : <span className="font-semibold">{calcFilteredStats.total}</span>
                 </div>
                 <div className="mb-2 text-lg font-medium">
-                  Complete : <span className="font-semibold">{stats?.complete || 0}</span>
+                  Complete : <span className="font-semibold">{calcFilteredStats.complete}</span>
                 </div>
                 <div className="mb-2 text-lg font-medium">
-                  Progress : <span className="font-semibold">{stats?.progress || 0}</span>
+                  Progress : <span className="font-semibold">{calcFilteredStats.progress}</span>
                 </div>
                 <div className="text-lg font-medium">
-                  Overdue : <span className="font-semibold">{stats?.overdue || 0}</span>
+                  Overdue : <span className="font-semibold">{calcFilteredStats.overdue}</span>
                 </div>
                 <div className="mt-4 flex text-xs font-medium">
                   <div className="flex items-center mr-3">
@@ -225,21 +346,21 @@ const Dashboard: React.FC = () => {
               <Skeleton className="w-full h-[200px]" />
             ) : (
               <BarChart
-                labels={deptStats?.map((d: any) => d.department) || []}
+                labels={calcFilteredDeptStats.map((d: any) => d.department)}
                 datasets={[
                   {
                     label: "Progress",
-                    data: deptStats?.map((d: any) => d.progress) || [],
+                    data: calcFilteredDeptStats.map((d: any) => d.progress),
                     backgroundColor: "#2563eb",
                   },
                   {
                     label: "Complete",
-                    data: deptStats?.map((d: any) => d.complete) || [],
+                    data: calcFilteredDeptStats.map((d: any) => d.complete),
                     backgroundColor: "#f97316",
                   },
                   {
                     label: "Overdue",
-                    data: deptStats?.map((d: any) => d.overdue) || [],
+                    data: calcFilteredDeptStats.map((d: any) => d.overdue),
                     backgroundColor: "#9ca3af",
                   },
                 ]}
@@ -256,21 +377,21 @@ const Dashboard: React.FC = () => {
               <Skeleton className="w-full h-[200px]" />
             ) : (
               <BarChart
-                labels={siteStats?.map((s: any) => s.site) || []}
+                labels={calcFilteredSiteStats.map((s: any) => s.site)}
                 datasets={[
                   {
                     label: "Progress",
-                    data: siteStats?.map((s: any) => s.progress) || [],
+                    data: calcFilteredSiteStats.map((s: any) => s.progress),
                     backgroundColor: "#2563eb",
                   },
                   {
                     label: "Complete",
-                    data: siteStats?.map((s: any) => s.complete) || [],
+                    data: calcFilteredSiteStats.map((s: any) => s.complete),
                     backgroundColor: "#f97316",
                   },
                   {
                     label: "Overdue",
-                    data: siteStats?.map((s: any) => s.overdue) || [],
+                    data: calcFilteredSiteStats.map((s: any) => s.overdue),
                     backgroundColor: "#9ca3af",
                   },
                 ]}
@@ -393,6 +514,18 @@ const Dashboard: React.FC = () => {
                       scope="col"
                       className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
                     >
+                      Created
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
+                      Due Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-left text-xs font-medium text-white uppercase tracking-wider"
+                    >
                       Status
                     </th>
                   </tr>
@@ -412,6 +545,12 @@ const Dashboard: React.FC = () => {
                           <td className="px-3 py-2 whitespace-nowrap">
                             <Skeleton className="w-20 h-4" />
                           </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-20 h-4" />
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Skeleton className="w-20 h-4" />
+                          </td>
                         </tr>
                       ))
                   ) : filteredPicas.length > 0 ? (
@@ -426,6 +565,12 @@ const Dashboard: React.FC = () => {
                         <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
                           {pica.personInCharge?.name}
                         </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.date ? format(new Date(pica.date), 'dd MMM yyyy') : '-'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-800">
+                          {pica.dueDate ? format(new Date(pica.dueDate), 'dd MMM yyyy') : '-'}
+                        </td>
                         <td className="px-3 py-2 whitespace-nowrap text-xs">
                           <StatusBadge status={pica.status} />
                         </td>
@@ -434,7 +579,7 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-3 py-2 text-center text-xs text-gray-500"
                       >
                         No PICAs found
