@@ -322,181 +322,83 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-1.5">
-        {/* Left Column - Status Cards */}
-        <div className="col-span-3">
-          <div className="grid grid-rows-4 gap-0.5">
-            {/* In Progress Card */}
-            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
-              <div className="flex items-center">
-                <h3 className="text-sm font-bold text-primary mr-1">
-                  {statsLoading ? (
-                    <Skeleton className="h-3 w-6" />
-                  ) : (
-                    (stats && stats.progress) || 0
-                  )}
-                </h3>
-                <p className="text-[8px] font-medium text-gray-500">In Progress</p>
-                <div className="ml-auto p-0.5 bg-blue-100 rounded-full">
-                  <Clock className="h-2 w-2 text-blue-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Completed Card */}
-            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
-              <div className="flex items-center">
-                <h3 className="text-sm font-bold text-green-600 mr-1">
-                  {statsLoading ? (
-                    <Skeleton className="h-3 w-6" />
-                  ) : (
-                    (stats && stats.complete) || 0
-                  )}
-                </h3>
-                <p className="text-[8px] font-medium text-gray-500">Completed</p>
-                <div className="ml-auto p-0.5 bg-green-100 rounded-full">
-                  <CheckCircle className="h-2 w-2 text-green-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Overdue Card */}
-            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
-              <div className="flex items-center">
-                <h3 className="text-sm font-bold text-red-600 mr-1">
-                  {statsLoading ? (
-                    <Skeleton className="h-3 w-6" />
-                  ) : (
-                    (stats && stats.overdue) || 0
-                  )}
-                </h3>
-                <p className="text-[8px] font-medium text-gray-500">Overdue</p>
-                <div className="ml-auto p-0.5 bg-red-100 rounded-full">
-                  <AlertCircle className="h-2 w-2 text-red-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Total PICA Card */}
-            <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
-              <div className="flex items-center">
-                <h3 className="text-sm font-bold text-gray-800 mr-1">
-                  {statsLoading ? (
-                    <Skeleton className="h-3 w-6" />
-                  ) : (
-                    (stats && stats.total) || 0
-                  )}
-                </h3>
-                <p className="text-[8px] font-medium text-gray-500">Total PICA</p>
-                <div className="ml-auto p-0.5 bg-gray-100 rounded-full">
-                  <Calendar className="h-2 w-2 text-gray-600" />
-                </div>
+      <div className="grid grid-cols-12 gap-1">
+        {/* Status Cards Row */}
+        <div className="col-span-12 grid grid-cols-4 gap-1">
+          {/* In Progress Card */}
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+            <div className="flex items-center">
+              <h3 className="text-sm font-bold text-primary mr-1">
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-6" />
+                ) : (
+                  (stats && stats.progress) || 0
+                )}
+              </h3>
+              <p className="text-[8px] font-medium text-gray-500">In Progress</p>
+              <div className="ml-auto p-0.5 bg-blue-100 rounded-full">
+                <Clock className="h-2 w-2 text-blue-600" />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Department PICA Chart - Full width */}
-        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1">
-          <div className="flex justify-between items-center">
-            <h3 className="text-[9px] font-semibold">Department PICA Summary</h3>
-            <div className="flex flex-wrap items-center text-[7px] gap-0.5">
-              <div className="flex items-center mr-0.5">
-                <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
-                <span>Progress</span>
-              </div>
-              <div className="flex items-center mr-0.5">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
-                <span>Complete</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
-                <span>Overdue</span>
+          {/* Completed Card */}
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+            <div className="flex items-center">
+              <h3 className="text-sm font-bold text-green-600 mr-1">
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-6" />
+                ) : (
+                  (stats && stats.complete) || 0
+                )}
+              </h3>
+              <p className="text-[8px] font-medium text-gray-500">Completed</p>
+              <div className="ml-auto p-0.5 bg-green-100 rounded-full">
+                <CheckCircle className="h-2 w-2 text-green-600" />
               </div>
             </div>
           </div>
-          {deptStatsLoading ? (
-            <Skeleton className="w-full h-[90px]" />
-          ) : (
-            <div className="h-[90px]">
-              <BarChart
-                labels={calcFilteredDeptStats.map(d => d.department)}
-                datasets={[
-                  {
-                    label: "Progress",
-                    data: calcFilteredDeptStats.map(d => d.progress),
-                    backgroundColor: "#2563eb",
-                  },
-                  {
-                    label: "Complete",
-                    data: calcFilteredDeptStats.map(d => d.complete),
-                    backgroundColor: "#22c55e",
-                  },
-                  {
-                    label: "Overdue",
-                    data: calcFilteredDeptStats.map(d => d.overdue),
-                    backgroundColor: "#ef4444",
-                  },
-                ]}
-                maxY={5}
-              />
+
+          {/* Overdue Card */}
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+            <div className="flex items-center">
+              <h3 className="text-sm font-bold text-red-600 mr-1">
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-6" />
+                ) : (
+                  (stats && stats.overdue) || 0
+                )}
+              </h3>
+              <p className="text-[8px] font-medium text-gray-500">Overdue</p>
+              <div className="ml-auto p-0.5 bg-red-100 rounded-full">
+                <AlertCircle className="h-2 w-2 text-red-600" />
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Total PICA Card */}
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+            <div className="flex items-center">
+              <h3 className="text-sm font-bold text-gray-800 mr-1">
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-6" />
+                ) : (
+                  (stats && stats.total) || 0
+                )}
+              </h3>
+              <p className="text-[8px] font-medium text-gray-500">Total PICA</p>
+              <div className="ml-auto p-0.5 bg-gray-100 rounded-full">
+                <Calendar className="h-2 w-2 text-gray-600" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Middle Row: Project Site Chart and Calendar */}
+      {/* Calendar Row */}
       <div className="grid grid-cols-12 gap-1 mt-1 mb-1">
-        {/* Project Site PICA Chart - Left Column */}
-        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1">
-          <div className="flex justify-between items-center">
-            <h3 className="text-[9px] font-semibold">Project Site Summary</h3>
-          </div>
-          {siteStatsLoading ? (
-            <Skeleton className="w-full h-[90px]" />
-          ) : (
-            <div className="h-[90px]">
-              <BarChart
-                labels={calcFilteredSiteStats.map(s => s.site)}
-                datasets={[
-                  {
-                    label: "Progress",
-                    data: calcFilteredSiteStats.map(s => s.progress),
-                    backgroundColor: "#2563eb",
-                  },
-                  {
-                    label: "Complete",
-                    data: calcFilteredSiteStats.map(s => s.complete),
-                    backgroundColor: "#22c55e",
-                  },
-                  {
-                    label: "Overdue",
-                    data: calcFilteredSiteStats.map(s => s.overdue),
-                    backgroundColor: "#ef4444",
-                  },
-                ]}
-                maxY={6}
-              />
-            </div>
-          )}
-          <div className="flex flex-wrap items-center text-[7px] gap-0.5">
-            <div className="flex items-center mr-0.5">
-              <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
-              <span>Progress</span>
-            </div>
-            <div className="flex items-center mr-0.5">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
-              <span>Complete</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
-              <span>Overdue</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar - Right Column */}
-        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1">
+        {/* Calendar - Full Width */}
+        <div className="col-span-12 bg-white border border-gray-100 rounded-md shadow-sm p-1">
           {/* Calendar Header */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-0.5">
