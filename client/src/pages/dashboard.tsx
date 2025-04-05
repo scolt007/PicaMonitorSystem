@@ -326,69 +326,69 @@ const Dashboard: React.FC = () => {
         {/* Status Cards Row */}
         <div className="col-span-12 grid grid-cols-4 gap-1">
           {/* In Progress Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-sm font-bold text-primary mr-1">
+              <h3 className="text-lg font-bold text-primary mr-1">
                 {statsLoading ? (
-                  <Skeleton className="h-3 w-6" />
+                  <Skeleton className="h-4 w-8" />
                 ) : (
                   (stats && stats.progress) || 0
                 )}
               </h3>
-              <p className="text-[8px] font-medium text-gray-500">In Progress</p>
+              <p className="text-[10px] font-medium text-gray-500">In Progress</p>
               <div className="ml-auto p-0.5 bg-blue-100 rounded-full">
-                <Clock className="h-2 w-2 text-blue-600" />
+                <Clock className="h-3 w-3 text-blue-600" />
               </div>
             </div>
           </div>
 
           {/* Completed Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-sm font-bold text-green-600 mr-1">
+              <h3 className="text-lg font-bold text-green-600 mr-1">
                 {statsLoading ? (
-                  <Skeleton className="h-3 w-6" />
+                  <Skeleton className="h-4 w-8" />
                 ) : (
                   (stats && stats.complete) || 0
                 )}
               </h3>
-              <p className="text-[8px] font-medium text-gray-500">Completed</p>
+              <p className="text-[10px] font-medium text-gray-500">Completed</p>
               <div className="ml-auto p-0.5 bg-green-100 rounded-full">
-                <CheckCircle className="h-2 w-2 text-green-600" />
+                <CheckCircle className="h-3 w-3 text-green-600" />
               </div>
             </div>
           </div>
 
           {/* Overdue Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-sm font-bold text-red-600 mr-1">
+              <h3 className="text-lg font-bold text-red-600 mr-1">
                 {statsLoading ? (
-                  <Skeleton className="h-3 w-6" />
+                  <Skeleton className="h-4 w-8" />
                 ) : (
                   (stats && stats.overdue) || 0
                 )}
               </h3>
-              <p className="text-[8px] font-medium text-gray-500">Overdue</p>
+              <p className="text-[10px] font-medium text-gray-500">Overdue</p>
               <div className="ml-auto p-0.5 bg-red-100 rounded-full">
-                <AlertCircle className="h-2 w-2 text-red-600" />
+                <AlertCircle className="h-3 w-3 text-red-600" />
               </div>
             </div>
           </div>
 
           {/* Total PICA Card */}
-          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1">
+          <div className="bg-white border border-gray-100 rounded-md shadow-sm p-1.5">
             <div className="flex items-center">
-              <h3 className="text-sm font-bold text-gray-800 mr-1">
+              <h3 className="text-lg font-bold text-gray-800 mr-1">
                 {statsLoading ? (
-                  <Skeleton className="h-3 w-6" />
+                  <Skeleton className="h-4 w-8" />
                 ) : (
                   (stats && stats.total) || 0
                 )}
               </h3>
-              <p className="text-[8px] font-medium text-gray-500">Total PICA</p>
+              <p className="text-[10px] font-medium text-gray-500">Total PICA</p>
               <div className="ml-auto p-0.5 bg-gray-100 rounded-full">
-                <Calendar className="h-2 w-2 text-gray-600" />
+                <Calendar className="h-3 w-3 text-gray-600" />
               </div>
             </div>
           </div>
@@ -398,14 +398,14 @@ const Dashboard: React.FC = () => {
       {/* Calendar and Project Site Chart Row */}
       <div className="grid grid-cols-12 gap-1 mt-1 mb-1">
         {/* Project Site PICA Chart - Left Column */}
-        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-1">
-          <div className="flex justify-between items-center">
-            <h3 className="text-[9px] font-semibold">Project Site Summary</h3>
+        <div className="col-span-3 bg-white border border-gray-100 rounded-md shadow-sm p-2">
+          <div className="flex justify-between items-center mb-1">
+            <h3 className="text-xs font-semibold">Project Site Summary</h3>
           </div>
           {siteStatsLoading ? (
-            <Skeleton className="w-full h-[90px]" />
+            <Skeleton className="w-full h-[100px]" />
           ) : (
-            <div className="h-[90px]">
+            <div className="h-[100px]">
               <BarChart
                 labels={calcFilteredSiteStats.map(s => s.site)}
                 datasets={[
@@ -425,56 +425,56 @@ const Dashboard: React.FC = () => {
                     backgroundColor: "#ef4444",
                   },
                 ]}
-                maxY={6}
+                maxY={8}
               />
             </div>
           )}
-          <div className="flex flex-wrap items-center text-[7px] gap-0.5">
-            <div className="flex items-center mr-0.5">
-              <div className="w-1.5 h-1.5 bg-primary rounded-sm mr-0.5"></div>
+          <div className="flex flex-wrap items-center text-[9px] gap-1 mt-1">
+            <div className="flex items-center mr-1">
+              <div className="w-2 h-2 bg-primary rounded-sm mr-0.5"></div>
               <span>Progress</span>
             </div>
-            <div className="flex items-center mr-0.5">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-sm mr-0.5"></div>
+            <div className="flex items-center mr-1">
+              <div className="w-2 h-2 bg-green-500 rounded-sm mr-0.5"></div>
               <span>Complete</span>
             </div>
             <div className="flex items-center">
-              <div className="w-1.5 h-1.5 bg-red-500 rounded-sm mr-0.5"></div>
+              <div className="w-2 h-2 bg-red-500 rounded-sm mr-0.5"></div>
               <span>Overdue</span>
             </div>
           </div>
         </div>
 
         {/* Calendar - Right Column */}
-        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-1">
+        <div className="col-span-9 bg-white border border-gray-100 rounded-md shadow-sm p-2">
           {/* Calendar Header */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-0.5">
-              <h3 className="text-[9px] font-semibold">Calendar View</h3>
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center gap-1">
+              <h3 className="text-xs font-semibold">Calendar View</h3>
               {/* Legend Inline */}
-              <div className="flex ml-2 items-center gap-0.5 text-[6px]">
-                <div className="bg-yellow-300 text-black px-0.5 rounded">CREATE</div>
-                <div className="bg-blue-500 text-white px-0.5 rounded">PROGRESS</div>
-                <div className="bg-green-500 text-white px-0.5 rounded">COMPLETE</div>
-                <div className="bg-red-500 text-white px-0.5 rounded">OVERDUE</div>
+              <div className="flex ml-2 items-center gap-1 text-[8px]">
+                <div className="bg-yellow-300 text-black px-1 rounded">CREATE</div>
+                <div className="bg-blue-500 text-white px-1 rounded">PROGRESS</div>
+                <div className="bg-green-500 text-white px-1 rounded">COMPLETE</div>
+                <div className="bg-red-500 text-white px-1 rounded">OVERDUE</div>
               </div>
             </div>
             <div className="flex items-center">
-              <Button variant="outline" size="icon" className="h-4 w-4 p-0" onClick={prevMonth}>
-                <ChevronLeft className="h-2 w-2" />
+              <Button variant="outline" size="icon" className="h-5 w-5 p-0" onClick={prevMonth}>
+                <ChevronLeft className="h-3 w-3" />
               </Button>
-              <h2 className="text-[8px] font-medium mx-1">{format(currentMonth, "MMMM yyyy")}</h2>
-              <Button variant="outline" size="icon" className="h-4 w-4 p-0" onClick={nextMonth}>
-                <ChevronRight className="h-2 w-2" />
+              <h2 className="text-[10px] font-medium mx-1">{format(currentMonth, "MMMM yyyy")}</h2>
+              <Button variant="outline" size="icon" className="h-5 w-5 p-0" onClick={nextMonth}>
+                <ChevronRight className="h-3 w-3" />
               </Button>
             </div>
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-0.5 mt-0.5">
+          <div className="grid grid-cols-7 gap-0.5">
             {/* Days of week header */}
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-              <div key={day} className="text-center font-medium text-[7px] py-0">
+              <div key={day} className="text-center font-medium text-[9px] py-0.5">
                 {day}
               </div>
             ))}
@@ -488,9 +488,9 @@ const Dashboard: React.FC = () => {
             {picasLoading ? (
               // Show skeleton while loading
               Array.from({ length: daysInMonth.length }).map((_, index) => (
-                <div key={`skeleton-${index}`} className="border border-gray-200 min-h-[25px] p-0.5">
-                  <Skeleton className="h-2 w-2 rounded-full" />
-                  <Skeleton className="h-2 w-full mt-0.5" />
+                <div key={`skeleton-${index}`} className="border border-gray-200 min-h-[30px] p-1">
+                  <Skeleton className="h-3 w-3 rounded-full" />
+                  <Skeleton className="h-3 w-full mt-0.5" />
                 </div>
               ))
             ) : (
@@ -498,8 +498,8 @@ const Dashboard: React.FC = () => {
               daysInMonth.map((day) => {
                 const dayPicas = getPicasForDay(day);
                 return (
-                  <div key={day.toISOString()} className="border border-gray-200 min-h-[25px] p-0.5">
-                    <div className={`text-[7px] ${isToday(day) ? "bg-primary text-white rounded-full w-2.5 h-2.5 flex items-center justify-center" : day.getDay() === 0 || day.getDay() === 6 ? "text-red-600 font-medium" : "font-medium"}`}>
+                  <div key={day.toISOString()} className="border border-gray-200 min-h-[30px] p-1">
+                    <div className={`text-[9px] ${isToday(day) ? "bg-primary text-white rounded-full w-3.5 h-3.5 flex items-center justify-center" : day.getDay() === 0 || day.getDay() === 6 ? "text-red-600 font-medium" : "font-medium"}`}>
                       {format(day, "d")}
                     </div>
                     {dayPicas.length > 0 && (
@@ -508,24 +508,24 @@ const Dashboard: React.FC = () => {
                           <HoverCard.Root key={`${pica.id}-${isPicaCreated(pica, day) ? 'created' : 'due'}`}>
                             <HoverCard.Trigger asChild>
                               <div 
-                                className={`text-[0.5rem] leading-tight truncate py-0 px-0.5 cursor-pointer rounded ${getPicaBackgroundColor(pica, day)}`}
+                                className={`text-[0.6rem] leading-tight truncate py-0 px-1 cursor-pointer rounded ${getPicaBackgroundColor(pica, day)}`}
                               >
                                 {pica.picaId}
                               </div>
                             </HoverCard.Trigger>
                             <HoverCard.Content 
-                              className="bg-white p-1 rounded-md shadow-lg border border-gray-200 w-52 z-50"
+                              className="bg-white p-2 rounded-md shadow-lg border border-gray-200 w-56 z-50"
                               sideOffset={5}
                             >
-                              <div className="flex flex-col gap-0.5">
+                              <div className="flex flex-col gap-1">
                                 <div className="flex justify-between items-center">
-                                  <span className="font-bold text-[9px]">{pica.picaId}</span>
+                                  <span className="font-bold text-xs">{pica.picaId}</span>
                                   <span className="flex items-center gap-0.5">
                                     {getStatusIcon(pica.status)}
-                                    <span className="capitalize text-[8px]">{pica.status}</span>
+                                    <span className="capitalize text-[10px]">{pica.status}</span>
                                   </span>
                                 </div>
-                                <div className="text-[8px]">
+                                <div className="text-[10px]">
                                   <div><strong>Issue:</strong> {pica.issue}</div>
                                   <div><strong>Created:</strong> {formatDate(pica.date)}</div>
                                   <div><strong>Due:</strong> {formatDate(pica.dueDate)}</div>
@@ -538,7 +538,7 @@ const Dashboard: React.FC = () => {
                           </HoverCard.Root>
                         ))}
                         {dayPicas.length > 2 && (
-                          <div className="text-[0.45rem] text-gray-500 truncate">+{dayPicas.length - 2} more</div>
+                          <div className="text-[0.55rem] text-gray-500 truncate">+{dayPicas.length - 2} more</div>
                         )}
                       </div>
                     )}
@@ -552,16 +552,16 @@ const Dashboard: React.FC = () => {
 
       {/* Person In Charge Monitor */}
       <div className="bg-white border border-gray-100 rounded-md shadow-sm">
-        <div className="p-0.5 bg-gray-50 border-b flex flex-row justify-between items-center">
-          <h2 className="text-[9px] font-semibold text-gray-800">
+        <div className="p-1 bg-gray-50 border-b flex flex-row justify-between items-center">
+          <h2 className="text-xs font-semibold text-gray-800">
             Person In Charge Monitor
           </h2>
-          <div className="flex gap-0.5">
+          <div className="flex gap-1">
             <Button 
               variant={activeFilter === "all" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setActiveFilter("all")}
-              className="text-[7px] h-4 px-1 py-0"
+              className="text-[9px] h-5 px-2 py-0"
             >
               All
             </Button>
@@ -569,7 +569,7 @@ const Dashboard: React.FC = () => {
               variant={activeFilter === "progress" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setActiveFilter("progress")}
-              className="text-[7px] h-4 px-1 py-0"
+              className="text-[9px] h-5 px-2 py-0"
             >
               Progress
             </Button>
@@ -577,7 +577,7 @@ const Dashboard: React.FC = () => {
               variant={activeFilter === "complete" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setActiveFilter("complete")}
-              className="text-[7px] h-4 px-1 py-0"
+              className="text-[9px] h-5 px-2 py-0"
             >
               Complete
             </Button>
@@ -585,62 +585,62 @@ const Dashboard: React.FC = () => {
               variant={activeFilter === "overdue" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setActiveFilter("overdue")}
-              className="text-[7px] h-4 px-1 py-0"
+              className="text-[9px] h-5 px-2 py-0"
             >
               Overdue
             </Button>
           </div>
         </div>
-        <div className="p-0.5">
+        <div className="p-1">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-primary">
                 <tr>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     PICA ID
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Date
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Issue
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Task
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     PIC
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-left text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-left text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Due Date
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-center text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-center text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    className="px-1 py-0 text-center text-[6px] font-medium text-white uppercase tracking-wider"
+                    className="px-2 py-1 text-center text-[9px] font-medium text-white uppercase tracking-wider"
                   >
                     Action
                   </th>
@@ -652,29 +652,29 @@ const Dashboard: React.FC = () => {
                     .fill(0)
                     .map((_, i) => (
                       <tr key={i}>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-10 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-12 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-12 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-14 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-16 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-20 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-20 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-24 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-10 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-12 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-12 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-14 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-10 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-12 h-3" />
                         </td>
-                        <td className="px-1 py-0.5 whitespace-nowrap">
-                          <Skeleton className="w-8 h-2" />
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <Skeleton className="w-10 h-3" />
                         </td>
                       </tr>
                     ))
@@ -682,51 +682,51 @@ const Dashboard: React.FC = () => {
                   // Show current page items
                   getCurrentPageItems().map((pica) => (
                     <tr key={pica.id} className="hover:bg-gray-50">
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] font-medium text-gray-800">
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] font-medium text-gray-800">
                         {pica.picaId}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] text-gray-800">
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] text-gray-800">
                         {pica.date ? format(new Date(pica.date), 'dd/MM/yy') : '-'}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] text-gray-800">
-                        {pica.issue && pica.issue.length > 20 
-                          ? `${pica.issue.substring(0, 20)}...` 
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] text-gray-800">
+                        {pica.issue && pica.issue.length > 25 
+                          ? `${pica.issue.substring(0, 25)}...` 
                           : pica.issue}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] text-gray-800">
-                        {pica.correctiveAction && pica.correctiveAction.length > 20
-                          ? `${pica.correctiveAction.substring(0, 20)}...` 
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] text-gray-800">
+                        {pica.correctiveAction && pica.correctiveAction.length > 25
+                          ? `${pica.correctiveAction.substring(0, 25)}...` 
                           : pica.correctiveAction}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] text-gray-800">
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] text-gray-800">
                         {pica.personInCharge?.name}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-[7px] text-gray-800">
+                      <td className="px-2 py-1 whitespace-nowrap text-[9px] text-gray-800">
                         {pica.dueDate ? format(new Date(pica.dueDate), 'dd/MM/yy') : '-'}
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-center">
+                      <td className="px-2 py-1 whitespace-nowrap text-center">
                         <StatusBadge status={pica.status} size="xs" />
                       </td>
-                      <td className="px-0.5 py-0 whitespace-nowrap text-center">
-                        <div className="flex justify-center space-x-0.5">
+                      <td className="px-2 py-1 whitespace-nowrap text-center">
+                        <div className="flex justify-center space-x-1">
                           <Link href={`/pica-progress?picaId=${pica.picaId}`}>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-3 w-3 p-0"
+                              className="h-4 w-4 p-0"
                               title="Edit PICA"
                             >
-                              <Edit className="h-1.5 w-1.5" />
+                              <Edit className="h-2.5 w-2.5" />
                             </Button>
                           </Link>
                           <Link href={`/pica-progress?picaId=${pica.picaId}&action=view`}>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-3 w-3 p-0"
+                              className="h-4 w-4 p-0"
                               title="View Details"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="5" height="5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                               </svg>
@@ -740,7 +740,7 @@ const Dashboard: React.FC = () => {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-1 py-0 text-center text-[7px] text-gray-500"
+                      className="px-2 py-1 text-center text-[9px] text-gray-500"
                     >
                       No PICAs found
                     </td>
@@ -751,15 +751,15 @@ const Dashboard: React.FC = () => {
           </div>
           {/* Pagination controls */}
           {filteredPicas && filteredPicas.length > 0 && (
-            <div className="flex items-center justify-between border-t border-gray-200 px-1 py-0 mt-0.5">
-              <div className="hidden md:flex items-center text-[6px] text-gray-700">
+            <div className="flex items-center justify-between border-t border-gray-200 px-2 py-1 mt-1">
+              <div className="hidden md:flex items-center text-[9px] text-gray-700">
                 {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPicas.length)} of {filteredPicas.length}
               </div>
-              <div className="flex items-center space-x-0.5 mx-auto md:mx-0">
+              <div className="flex items-center space-x-1 mx-auto md:mx-0">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-3 text-[6px] px-0.5 py-0"
+                  className="h-5 text-[9px] px-1 py-0"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(currentPage - 1)}
                 >
@@ -770,7 +770,7 @@ const Dashboard: React.FC = () => {
                     key={i}
                     variant={currentPage === i + 1 ? "default" : "outline"}
                     size="sm"
-                    className="h-3 w-3 text-[6px] p-0"
+                    className="h-5 w-5 text-[9px] p-0"
                     onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
@@ -779,7 +779,7 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-3 text-[6px] px-0.5 py-0"
+                  className="h-5 text-[9px] px-1 py-0"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(currentPage + 1)}
                 >
