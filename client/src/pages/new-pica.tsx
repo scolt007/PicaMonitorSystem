@@ -122,7 +122,7 @@ const NewPica: React.FC = () => {
         
         // Check for existing PICAs with the same base ID
         let highestSequence = 0;
-        let suffixCounter = 0;
+        let nextCounter = 0;
         
         if (existingPicas && existingPicas.length > 0) {
           // Extract PICAs with the same base ID format (MMYY + site.code)
@@ -132,25 +132,34 @@ const NewPica: React.FC = () => {
           const baseIdPattern = `${month}${year}${site.code}`;
           
           // Find existing PICAs that match the pattern
-          const relatedPicas = existingPicas.filter(pica => 
-            pica.picaId.startsWith(baseIdPattern) || 
-            pica.picaId.startsWith(`${baseIdPattern}-`)
-          );
+          const relatedPicas = existingPicas.filter(pica => {
+            // Check base pattern and also patterns with 2-digit suffix
+            return pica.picaId.startsWith(baseIdPattern) || 
+                  /^[\d]{4}[A-Za-z0-9-]+[\d]{2}$/.test(pica.picaId);
+          });
           
-          // Check if we need to add a suffix
+          // Check if we need to increment the counter
           if (relatedPicas.length > 0) {
-            // Get all used suffixes like -1, -2, etc.
-            const usedSuffixes = relatedPicas
+            // Extract the counter from existing PICAs
+            const counters = relatedPicas
               .map(pica => {
-                const match = pica.picaId.match(new RegExp(`^${baseIdPattern}(?:-([0-9]+))?`));
-                return match && match[1] ? parseInt(match[1]) : 0;
+                // Handle both formats: with and without suffix
+                if (pica.picaId.startsWith(baseIdPattern)) {
+                  // No suffix or has a numeric suffix like MMYYCODE or MMYYCODE01
+                  if (pica.picaId.length === baseIdPattern.length) {
+                    return 0; // No suffix
+                  } else if (pica.picaId.length === baseIdPattern.length + 2) {
+                    // Has a 2-digit suffix
+                    const suffix = pica.picaId.slice(-2);
+                    return !isNaN(parseInt(suffix)) ? parseInt(suffix) : 0;
+                  }
+                }
+                return 0;
               })
-              .filter(suffix => suffix !== null);
+              .filter(counter => counter !== null);
             
-            // If we have any base IDs without a suffix (suffix === 0), increment the counter
-            if (usedSuffixes.includes(0)) {
-              suffixCounter = Math.max(...usedSuffixes) + 1;
-            }
+            // Get next counter (max + 1)
+            nextCounter = counters.length > 0 ? Math.max(...counters) + 1 : 1;
             
             // Get the highest sequence number used across all related PICAs
             highestSequence = relatedPicas.reduce((max, pica) => {
@@ -160,9 +169,10 @@ const NewPica: React.FC = () => {
           }
         }
         
-        // Add suffix if needed
-        const newMasterPicaId = suffixCounter > 0 
-          ? `${baseMasterPicaId}-${suffixCounter}` 
+        // Add 2-digit suffix to the master ID
+        const formattedCounter = String(nextCounter).padStart(2, "0");
+        const newMasterPicaId = nextCounter > 0 
+          ? `${baseMasterPicaId}${formattedCounter}` 
           : baseMasterPicaId;
         
         setMasterPicaId(newMasterPicaId);
