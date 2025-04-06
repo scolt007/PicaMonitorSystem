@@ -276,7 +276,7 @@ const ProjectJob: React.FC = () => {
                   <FormItem>
                     <FormLabel>Job Code</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter job code (e.g., KMP-NPR)" />
+                      <Input {...field} placeholder="Enter job code (e.g., Project XYZ)" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -371,7 +371,7 @@ const ProjectJob: React.FC = () => {
                   <FormItem>
                     <FormLabel>Job Code</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter job code (e.g., KMP-NPR)" />
+                      <Input {...field} placeholder="Enter job code (e.g., Project XYZ)" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
