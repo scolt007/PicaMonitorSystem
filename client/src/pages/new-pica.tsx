@@ -37,13 +37,27 @@ type FormValues = z.infer<typeof formSchema>;
 const NewPica: React.FC = () => {
   const { toast } = useToast();
   
+  // Define types for project sites and people
+  type ProjectSite = {
+    id: number;
+    code: string;
+    name: string;
+    location?: string;
+  };
+
+  type Person = {
+    id: number;
+    name: string;
+    email?: string;
+  };
+
   // Fetch project sites for dropdown
-  const { data: projectSites, isLoading: sitesLoading } = useQuery({
+  const { data: projectSites, isLoading: sitesLoading } = useQuery<ProjectSite[]>({
     queryKey: ["/api/project-sites"],
   });
 
   // Fetch people for dropdown
-  const { data: people, isLoading: peopleLoading } = useQuery({
+  const { data: people, isLoading: peopleLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
 
@@ -95,12 +109,14 @@ const NewPica: React.FC = () => {
   const handleProjectSiteChange = (value: string) => {
     setSelectedProjectSite(value);
     
-    const site = projectSites?.find((site: any) => site.id.toString() === value);
-    if (site) {
-      const newMasterPicaId = generateMasterPicaId(site.code);
-      setMasterPicaId(newMasterPicaId);
-      form.setValue("masterPicaId", newMasterPicaId);
-      form.setValue("projectSiteId", parseInt(value));
+    if (projectSites && projectSites.length > 0) {
+      const site = projectSites.find((site) => site.id.toString() === value);
+      if (site) {
+        const newMasterPicaId = generateMasterPicaId(site.code);
+        setMasterPicaId(newMasterPicaId);
+        form.setValue("masterPicaId", newMasterPicaId);
+        form.setValue("projectSiteId", parseInt(value));
+      }
     }
   };
 
@@ -196,22 +212,23 @@ const NewPica: React.FC = () => {
                       control={form.control}
                       name="projectSiteId"
                       render={({ field }) => (
-                        <Select
-                          disabled={sitesLoading}
-                          value={selectedProjectSite}
-                          onValueChange={handleProjectSiteChange}
-                        >
-                          <SelectTrigger className="w-full bg-transparent focus:outline-none border-0 p-0 shadow-none">
-                            <SelectValue placeholder="Select project site" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {projectSites?.map((site: any) => (
-                              <SelectItem key={site.id} value={site.id.toString()}>
-                                {site.code}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormItem>
+                          <FormControl>
+                            <select
+                              className="w-full bg-transparent focus:outline-none border-0 p-0 shadow-none"
+                              disabled={sitesLoading}
+                              value={selectedProjectSite}
+                              onChange={(e) => handleProjectSiteChange(e.target.value)}
+                            >
+                              <option value="">Select project site</option>
+                              {projectSites && projectSites.length > 0 && projectSites.map((site) => (
+                                <option key={site.id} value={site.id.toString()}>
+                                  {site.code}
+                                </option>
+                              ))}
+                            </select>
+                          </FormControl>
+                        </FormItem>
                       )}
                     />
                   </div>
@@ -317,22 +334,26 @@ const NewPica: React.FC = () => {
                             control={form.control}
                             name={`picaItems.${index}.personInChargeId`}
                             render={({ field }) => (
-                              <Select
-                                disabled={peopleLoading}
-                                value={field.value.toString()}
-                                onValueChange={(value) => field.onChange(parseInt(value))}
-                              >
-                                <SelectTrigger className="w-full bg-transparent border-0 p-0 shadow-none">
-                                  <SelectValue placeholder="Select PIC" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {people?.map((person: any) => (
-                                    <SelectItem key={person.id} value={person.id.toString()}>
-                                      {person.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormItem>
+                                <FormControl>
+                                  <select
+                                    className="w-full bg-transparent border-0 p-0 shadow-none"
+                                    disabled={peopleLoading}
+                                    value={field.value === 0 ? "" : field.value.toString()}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      field.onChange(value ? parseInt(value) : 0);
+                                    }}
+                                  >
+                                    <option value="">Select PIC</option>
+                                    {people && people.length > 0 && people.map((person) => (
+                                      <option key={person.id} value={person.id.toString()}>
+                                        {person.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </FormControl>
+                              </FormItem>
                             )}
                           />
                         </td>
