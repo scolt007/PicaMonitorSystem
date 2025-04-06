@@ -29,7 +29,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all PICAs with relations (public can view)
   app.get(`${apiPrefix}/picas`, async (req, res) => {
     try {
-      const picas = await storage.getPicasWithRelations();
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const picas = await storage.getPicasWithRelationsByOrganization(req.user.organizationId);
+        return res.json(picas);
+      }
+      
+      // If not authenticated or no organization ID, return empty array
+      // This ensures organizations only see their own data
+      const picas: any[] = [];
       res.json(picas);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve PICAs" });
@@ -46,7 +54,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      const picas = await storage.getPicasByStatus(status);
+      // Filter by organization ID if user is authenticated
+      let picas: any[];
+      if (req.isAuthenticated() && req.user.organizationId) {
+        // We need to filter the result by organization
+        const allPicas = await storage.getPicasByStatus(status);
+        picas = allPicas.filter(pica => pica.organizationId === req.user.organizationId);
+      } else {
+        // If not authenticated or no organization ID, return empty array for data isolation
+        picas = [] as any[];
+      }
+      
       res.json(picas);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve PICAs by status" });
@@ -56,6 +74,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get PICA statistics
   app.get(`${apiPrefix}/picas/stats`, async (req, res) => {
     try {
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const stats = await storage.countPicasByStatus(req.user.organizationId);
+        return res.json(stats);
+      }
+      
+      // If not authenticated or no organization ID, return empty stats
       const stats = await storage.countPicasByStatus();
       res.json(stats);
     } catch (error) {
@@ -66,6 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get PICA statistics by department
   app.get(`${apiPrefix}/picas/stats/department`, async (req, res) => {
     try {
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const stats = await storage.countPicasByDepartment(req.user.organizationId);
+        return res.json(stats);
+      }
+      
+      // If not authenticated or no organization ID, return all stats
       const stats = await storage.countPicasByDepartment();
       res.json(stats);
     } catch (error) {
@@ -76,6 +108,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get PICA statistics by project site
   app.get(`${apiPrefix}/picas/stats/site`, async (req, res) => {
     try {
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const stats = await storage.countPicasByProjectSite(req.user.organizationId);
+        return res.json(stats);
+      }
+      
+      // If not authenticated or no organization ID, return all stats
       const stats = await storage.countPicasByProjectSite();
       res.json(stats);
     } catch (error) {
@@ -94,6 +133,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pica = await storage.getPica(id);
       if (!pica) {
         return res.status(404).json({ message: "PICA not found" });
+      }
+      
+      // Check if user has access to this PICA (belongs to the same organization)
+      if (req.isAuthenticated() && req.user.organizationId && 
+          pica.organizationId !== req.user.organizationId) {
+        return res.status(403).json({ message: "You don't have access to this PICA" });
       }
       
       res.json(pica);
@@ -193,7 +238,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all people
   app.get(`${apiPrefix}/people`, async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const people = await storage.getPeopleByOrganization(req.user.organizationId);
+        return res.json(people);
+      }
+      
+      // If not authenticated or no organization ID, return empty array for data isolation
+      const people: any[] = [];
       res.json(people);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve people" });
@@ -211,6 +263,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const person = await storage.getPerson(id);
       if (!person) {
         return res.status(404).json({ message: "Person not found" });
+      }
+      
+      // Check if user has access to this person (belongs to the same organization)
+      if (req.isAuthenticated() && req.user.organizationId && 
+          person.organizationId !== req.user.organizationId) {
+        return res.status(403).json({ message: "You don't have access to this person" });
       }
       
       res.json(person);
@@ -280,7 +338,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all departments
   app.get(`${apiPrefix}/departments`, async (req, res) => {
     try {
-      const departments = await storage.getAllDepartments();
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const departments = await storage.getDepartmentsByOrganization(req.user.organizationId);
+        return res.json(departments);
+      }
+      
+      // If not authenticated or no organization ID, return empty array for data isolation
+      const departments: any[] = [];
       res.json(departments);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve departments" });
@@ -298,6 +363,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const department = await storage.getDepartment(id);
       if (!department) {
         return res.status(404).json({ message: "Department not found" });
+      }
+      
+      // Check if user has access to this department (belongs to the same organization)
+      if (req.isAuthenticated() && req.user.organizationId && 
+          department.organizationId !== req.user.organizationId) {
+        return res.status(403).json({ message: "You don't have access to this department" });
       }
       
       res.json(department);
@@ -367,7 +438,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all project sites
   app.get(`${apiPrefix}/project-sites`, async (req, res) => {
     try {
-      const projectSites = await storage.getAllProjectSites();
+      // Filter by organization ID if user is authenticated
+      if (req.isAuthenticated() && req.user.organizationId) {
+        const projectSites = await storage.getProjectSitesByOrganization(req.user.organizationId);
+        return res.json(projectSites);
+      }
+      
+      // If not authenticated or no organization ID, return empty array for data isolation
+      const projectSites: any[] = [];
       res.json(projectSites);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve project sites" });
@@ -385,6 +463,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projectSite = await storage.getProjectSite(id);
       if (!projectSite) {
         return res.status(404).json({ message: "Project site not found" });
+      }
+      
+      // Check if user has access to this project site (belongs to the same organization)
+      if (req.isAuthenticated() && req.user.organizationId && 
+          projectSite.organizationId !== req.user.organizationId) {
+        return res.status(403).json({ message: "You don't have access to this project site" });
       }
       
       res.json(projectSite);
@@ -454,7 +538,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all users (admin only)
   app.get(`${apiPrefix}/users`, canDelete, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      // Filter by organization ID if user is authenticated
+      let users;
+      if (req.isAuthenticated() && req.user.organizationId) {
+        users = await storage.getUsersByOrganization(req.user.organizationId);
+      } else {
+        users = await storage.getAllUsers();
+      }
+      
       // Don't send passwords to client
       const safeUsers = users.map(user => {
         const { password, ...userWithoutPassword } = user;
@@ -477,6 +568,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if user has access to this user (belongs to the same organization or is admin)
+      if (req.isAuthenticated() && req.user.organizationId !== user.organizationId) {
+        // Only allow super admins to view users from other organizations
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({ message: "You don't have access to this user" });
+        }
       }
       
       // Don't send password to client
@@ -586,6 +685,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const organization = await storage.getOrganization(id);
       if (!organization) {
         return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Check if user is allowed to access this organization
+      if (req.isAuthenticated() && req.user.organizationId !== organization.id) {
+        // Only allow users to access their own organization unless they are super admin
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({ message: "You don't have access to this organization" });
+        }
       }
       
       res.json(organization);
