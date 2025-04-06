@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import PicaFilterButtons from "@/components/PicaFilterButtons";
 import StatusBadge from "@/components/StatusBadge";
 import { Search, ClipboardList, Clock, MessageCircle } from "lucide-react";
@@ -144,9 +144,9 @@ const PicaProgress: React.FC = () => {
       return apiRequest("PUT", `/api/picas/${selectedPica.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/picas/${selectedPica?.id}/history`] });
+      // Invalidate all related queries
+      invalidateRelatedQueries('picas', selectedPica?.id);
+      
       toast({
         title: "Success",
         description: "PICA updated successfully",
@@ -169,8 +169,9 @@ const PicaProgress: React.FC = () => {
       return apiRequest("DELETE", `/api/picas/${selectedPica.id}`, undefined);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/picas"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/picas/stats"] });
+      // Invalidate all related queries
+      invalidateRelatedQueries('picas');
+      
       toast({
         title: "Success",
         description: "PICA deleted successfully",

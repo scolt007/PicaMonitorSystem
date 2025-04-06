@@ -41,13 +41,39 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Helper function to invalidate related queries
+export function invalidateRelatedQueries(entityType: string, id?: number) {
+  // Always invalidate the collection
+  queryClient.invalidateQueries({ queryKey: [`/api/${entityType}`] });
+  
+  // Invalidate the specific entity if ID is provided
+  if (id) {
+    queryClient.invalidateQueries({ queryKey: [`/api/${entityType}/${id}`] });
+  }
+  
+  // Invalidate related statistics
+  if (entityType === 'picas') {
+    queryClient.invalidateQueries({ queryKey: ['/api/picas/stats'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/picas/stats/department'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/picas/stats/site'] });
+    
+    // If we have an ID, invalidate its history too
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: [`/api/picas/${id}/history`] });
+    }
+  }
+  
+  // Invalidate dashboard data
+  queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchInterval: 30000, // Refetch every 30 seconds
+      refetchOnWindowFocus: true, // Refetch when window regains focus
+      staleTime: 10000, // Consider data stale after 10 seconds
       retry: false,
     },
     mutations: {
