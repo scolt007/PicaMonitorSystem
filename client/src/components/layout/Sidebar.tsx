@@ -27,7 +27,7 @@ const navigationItems = [
 ];
 
 const dataSettingItems = [
-  { label: "Person In Charge", href: "/person-in-charge", icon: <Users className="w-5 h-5 mr-3" /> },
+  { label: "Person", href: "/person-in-charge", icon: <Users className="w-5 h-5 mr-3" /> },
   { label: "Department", href: "/department", icon: <Building2 className="w-5 h-5 mr-3" /> },
   { label: "Job", href: "/project-job", icon: <Building className="w-5 h-5 mr-3" /> },
   { label: "User", href: "/user", icon: <User className="w-5 h-5 mr-3" /> },
