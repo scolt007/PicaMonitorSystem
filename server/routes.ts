@@ -150,7 +150,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new PICA (requires edit permission)
   app.post(`${apiPrefix}/picas`, canEdit, async (req, res) => {
     try {
+      // Parse the PICA data
       const picaData = insertPicaSchema.parse(req.body);
+      
+      // Make sure organizationId is set to the current user's organization
+      if (req.isAuthenticated() && req.user.organizationId) {
+        picaData.organizationId = req.user.organizationId;
+      }
+      
+      // Create the PICA
       const pica = await storage.createPica(picaData);
       res.status(201).json(pica);
     } catch (error) {
@@ -169,11 +177,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
+      // First get the existing PICA to ensure we have the correct organizationId
+      const existingPica = await storage.getPica(id);
+      if (!existingPica) {
+        return res.status(404).json({ message: "PICA not found" });
+      }
+      
+      // Check if user has access to this PICA (belongs to the same organization)
+      if (req.isAuthenticated() && req.user.organizationId && 
+          existingPica.organizationId && existingPica.organizationId !== req.user.organizationId) {
+        return res.status(403).json({ message: "You don't have access to this PICA" });
+      }
+      
       // Extract comment and updateDate from the request if present
       const { comment, updateDate, ...restData } = req.body;
       
       // Create a copy of the data to be updated with type assertion
       let picaData: any = { ...insertPicaSchema.partial().parse(restData) };
+      
+      // Ensure organizationId is preserved
+      if (req.isAuthenticated() && req.user.organizationId) {
+        picaData.organizationId = req.user.organizationId;
+      }
       
       // If updateDate is provided, use it to set the updatedAt field
       if (updateDate) {
