@@ -49,8 +49,11 @@ const PersonInCharge: React.FC = () => {
   });
 
   // Fetch departments for the select input
-  const { data: departments } = useQuery<Department[]>({
+  const { data: departments, isLoading: isDepartmentsLoading } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
+    onSuccess: (data) => {
+      console.log("Fetched departments:", data);
+    },
   });
   
   // Update selected department when department ID changes
@@ -72,6 +75,7 @@ const PersonInCharge: React.FC = () => {
       departmentId: null,
       position: "",
     },
+    mode: "onChange", // Validate on change
   });
   
   // Watch departmentId field to update selectedDepartmentId
@@ -198,13 +202,20 @@ const PersonInCharge: React.FC = () => {
   
   // Handle department selection and position auto-fill
   const handleDepartmentChange = (value: string, field: any) => {
+    console.log("Department change - selected value:", value);
+    
+    // Handle null value correctly
     const deptId = value === "null" ? null : parseInt(value);
     field.onChange(deptId);
     setSelectedDepartmentId(deptId);
     
+    console.log("Department change - deptId after conversion:", deptId);
+    
     // Auto-fill position if department has a position defined
     if (deptId && departments) {
       const selectedDept = departments.find(d => d.id === deptId);
+      console.log("Department change - found department:", selectedDept);
+      
       if (selectedDept && selectedDept.position) {
         form.setValue("position", selectedDept.position);
       } else {
@@ -335,30 +346,52 @@ const PersonInCharge: React.FC = () => {
               <FormField
                 control={form.control}
                 name="departmentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  console.log("Rendering department field:", field.value);
+                  return (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      {isDepartmentsLoading ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <div>
+                          <div className="mb-1">
+                            <Select
+                              value={field.value === null ? "null" : String(field.value)}
+                              onValueChange={(value) => handleDepartmentChange(value, field)}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select department" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="null">None</SelectItem>
+                                {departments && departments.length > 0 ? (
+                                  departments.map((department) => (
+                                    <SelectItem key={department.id} value={String(department.id)}>
+                                      {department.name}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-deps" disabled>
+                                    No departments available
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {departments && departments.length === 0 && (
+                            <p className="text-xs text-red-500 mt-1">
+                              No departments available. Please add departments first.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -434,30 +467,52 @@ const PersonInCharge: React.FC = () => {
               <FormField
                 control={form.control}
                 name="departmentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  console.log("Rendering department field (edit):", field.value);
+                  return (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      {isDepartmentsLoading ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <div>
+                          <div className="mb-1">
+                            <Select
+                              value={field.value === null ? "null" : String(field.value)}
+                              onValueChange={(value) => handleDepartmentChange(value, field)}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select department" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="null">None</SelectItem>
+                                {departments && departments.length > 0 ? (
+                                  departments.map((department) => (
+                                    <SelectItem key={department.id} value={String(department.id)}>
+                                      {department.name}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-deps" disabled>
+                                    No departments available
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {departments && departments.length === 0 && (
+                            <p className="text-xs text-red-500 mt-1">
+                              No departments available. Please add departments first.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

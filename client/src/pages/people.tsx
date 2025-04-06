@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +33,7 @@ type Department = {
   position?: string;
 };
 
-const PersonInCharge: React.FC = () => {
+const People: React.FC = () => {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -237,7 +236,7 @@ const PersonInCharge: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Person In Charge</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">People</h1>
       </div>
 
       <Card className="shadow">
@@ -247,7 +246,7 @@ const PersonInCharge: React.FC = () => {
               className="bg-primary hover:bg-blue-700 text-white font-medium"
               onClick={handleAdd}
             >
-              Add New PIC
+              Add New Person
             </Button>
           </div>
 
@@ -305,7 +304,7 @@ const PersonInCharge: React.FC = () => {
                   // Show no data message
                   <tr>
                     <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
-                      No person in charge found
+                      No people found
                     </td>
                   </tr>
                 )}
@@ -319,7 +318,7 @@ const PersonInCharge: React.FC = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Person In Charge</DialogTitle>
+            <DialogTitle>Add New Person</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitCreate)} className="space-y-4">
@@ -354,30 +353,29 @@ const PersonInCharge: React.FC = () => {
               <FormField
                 control={form.control}
                 name="departmentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value === null ? "null" : field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
+                render={({ field }) => {
+                  console.log("Department field value (add form):", field.value);
+                  return (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
+                        <select 
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={field.value === null ? "null" : field.value?.toString()}
+                          onChange={(e) => handleDepartmentChange(e.target.value, field)}
+                        >
+                          <option value="null">None</option>
+                          {departments && departments.map((department) => (
+                            <option key={department.id} value={department.id.toString()}>
+                              {department.name}
+                            </option>
+                          ))}
+                        </select>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -418,7 +416,7 @@ const PersonInCharge: React.FC = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Person In Charge</DialogTitle>
+            <DialogTitle>Edit Person</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
@@ -453,30 +451,29 @@ const PersonInCharge: React.FC = () => {
               <FormField
                 control={form.control}
                 name="departmentId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value === null ? "null" : field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
+                render={({ field }) => {
+                  console.log("Department field value (edit form):", field.value);
+                  return (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
+                        <select 
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={field.value === null ? "null" : field.value?.toString()}
+                          onChange={(e) => handleDepartmentChange(e.target.value, field)}
+                        >
+                          <option value="null">None</option>
+                          {departments && departments.map((department) => (
+                            <option key={department.id} value={department.id.toString()}>
+                              {department.name}
+                            </option>
+                          ))}
+                        </select>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -546,4 +543,4 @@ const PersonInCharge: React.FC = () => {
   );
 };
 
-export default PersonInCharge;
+export default People;
