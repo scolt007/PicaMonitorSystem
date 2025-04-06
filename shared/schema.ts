@@ -9,6 +9,7 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   departmentId: integer("department_id"),
+  position: text("position"), // Position in the department
   organizationId: integer("organization_id"), // Associated organization
 });
 

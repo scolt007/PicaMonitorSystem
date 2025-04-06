@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { insertPersonSchema } from "@shared/schema";
 
 const formSchema = insertPersonSchema.extend({
   departmentId: z.number().nullable(),
+  position: z.string().optional(), // Add position field
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -24,11 +25,13 @@ type Person = {
   name: string;
   email: string;
   departmentId: number | null;
+  position?: string;
 };
 
 type Department = {
   id: number;
   name: string;
+  position?: string;
 };
 
 const PersonInCharge: React.FC = () => {
@@ -37,6 +40,8 @@ const PersonInCharge: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
 
   // Fetch people
   const { data: people, isLoading } = useQuery<Person[]>({
@@ -47,6 +52,16 @@ const PersonInCharge: React.FC = () => {
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
   });
+  
+  // Update selected department when department ID changes
+  useEffect(() => {
+    if (selectedDepartmentId && departments) {
+      const department = departments.find(d => d.id === selectedDepartmentId);
+      setSelectedDepartment(department || null);
+    } else {
+      setSelectedDepartment(null);
+    }
+  }, [selectedDepartmentId, departments]);
 
   // Form for creating/editing people
   const form = useForm<FormValues>({
@@ -55,8 +70,16 @@ const PersonInCharge: React.FC = () => {
       name: "",
       email: "",
       departmentId: null,
+      position: "",
     },
   });
+  
+  // Watch departmentId field to update selectedDepartmentId
+  const watchedDepartmentId = form.watch("departmentId");
+  
+  useEffect(() => {
+    setSelectedDepartmentId(watchedDepartmentId);
+  }, [watchedDepartmentId]);
 
   // Create person mutation
   const createPerson = useMutation({
@@ -133,6 +156,7 @@ const PersonInCharge: React.FC = () => {
       name: "",
       email: "",
       departmentId: null,
+      position: "",
     });
     setIsAddDialogOpen(true);
   };
@@ -144,6 +168,7 @@ const PersonInCharge: React.FC = () => {
       name: person.name,
       email: person.email,
       departmentId: person.departmentId,
+      position: person.position || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -317,6 +342,26 @@ const PersonInCharge: React.FC = () => {
                 )}
               />
 
+              {selectedDepartmentId && (
+                <FormField
+                  control={form.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Position</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="Enter position in department" 
+                          defaultValue={selectedDepartment?.position || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <DialogFooter>
                 <Button
                   type="button"
@@ -398,6 +443,26 @@ const PersonInCharge: React.FC = () => {
                   </FormItem>
                 )}
               />
+
+              {selectedDepartmentId && (
+                <FormField
+                  control={form.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Position</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="Enter position in department" 
+                          defaultValue={selectedDepartment?.position || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <DialogFooter>
                 <Button

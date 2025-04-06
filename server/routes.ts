@@ -241,7 +241,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter by organization ID if user is authenticated
       if (req.isAuthenticated() && req.user.organizationId) {
         const people = await storage.getPeopleByOrganization(req.user.organizationId);
-        return res.json(people);
+        
+        // Make sure position field is always included in the response
+        const peopleWithPosition = people.map(person => ({
+          ...person,
+          position: person.position || ""
+        }));
+        
+        return res.json(peopleWithPosition);
       }
       
       // If not authenticated or no organization ID, return empty array for data isolation
@@ -271,7 +278,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have access to this person" });
       }
       
-      res.json(person);
+      // Make sure position field is always included
+      const responseData = {
+        ...person,
+        position: person.position || ""
+      };
+      
+      res.json(responseData);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve person" });
     }
@@ -280,7 +293,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new person (requires edit permission)
   app.post(`${apiPrefix}/people`, canEdit, async (req, res) => {
     try {
-      const personData = insertPersonSchema.parse(req.body);
+      // Extract position from the request body if present
+      const { position, ...restData } = req.body;
+      
+      // Add user's organization ID to ensure proper data isolation
+      if (!req.user || !req.user.organizationId) {
+        return res.status(400).json({ message: "Organization ID is required to create a person" });
+      }
+      
+      const personData = {
+        ...insertPersonSchema.parse(restData),
+        position: position || "",
+        organizationId: req.user.organizationId
+      };
+      
       const person = await storage.createPerson(personData);
       res.status(201).json(person);
     } catch (error) {
@@ -299,7 +325,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
-      const personData = insertPersonSchema.partial().parse(req.body);
+      // Extract position from the request body if present
+      const { position, ...restData } = req.body;
+      
+      // Include position in the person data for update
+      const personData = {
+        ...insertPersonSchema.partial().parse(restData),
+        position: position || undefined
+      };
+      
       const updatedPerson = await storage.updatePerson(id, personData);
       
       if (!updatedPerson) {
