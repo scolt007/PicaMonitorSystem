@@ -380,8 +380,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new department (requires edit permission)
   app.post(`${apiPrefix}/departments`, canEdit, async (req, res) => {
     try {
+      // Extract headName from the request body if present
+      const { headName, ...restData } = req.body;
+      
       // Parse the incoming data
-      const rawData = insertDepartmentSchema.parse(req.body);
+      const rawData = insertDepartmentSchema.parse(restData);
       
       // Add the user's organizationId to ensure proper data isolation
       if (!req.user || !req.user.organizationId) {
@@ -394,7 +397,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const department = await storage.createDepartment(departmentData);
-      res.status(201).json(department);
+      
+      // Add the headName to the response
+      const responseData = {
+        ...department,
+        headName: headName || "",
+      };
+      
+      res.status(201).json(responseData);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid department data", errors: error.errors });
@@ -412,14 +422,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
-      const departmentData = insertDepartmentSchema.partial().parse(req.body);
+      // Extract headName from the request body if present
+      const { headName, ...restData } = req.body;
+      
+      const departmentData = insertDepartmentSchema.partial().parse(restData);
       const updatedDepartment = await storage.updateDepartment(id, departmentData);
       
       if (!updatedDepartment) {
         return res.status(404).json({ message: "Department not found" });
       }
       
-      res.json(updatedDepartment);
+      // Add the headName to the response
+      const responseData = {
+        ...updatedDepartment,
+        headName: headName || "",
+      };
+      
+      res.json(responseData);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid department data", errors: error.errors });

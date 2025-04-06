@@ -15,7 +15,8 @@ import { z } from "zod";
 import { insertDepartmentSchema } from "@shared/schema";
 
 const formSchema = insertDepartmentSchema.extend({
-  headId: z.number().nullable(),
+  // Replace headId with headName for text input
+  headName: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -23,6 +24,7 @@ type Department = {
   id: number;
   name: string;
   headId: number | null;
+  headName?: string; // Add headName field
 };
 
 type Person = {
@@ -52,7 +54,7 @@ const Department: React.FC = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      headId: null,
+      headName: "",
     },
   });
 
@@ -129,7 +131,7 @@ const Department: React.FC = () => {
   const handleAdd = () => {
     form.reset({
       name: "",
-      headId: null,
+      headName: "",
     });
     setIsAddDialogOpen(true);
   };
@@ -139,7 +141,7 @@ const Department: React.FC = () => {
     setSelectedDepartment(department);
     form.reset({
       name: department.name,
-      headId: department.headId,
+      headName: department.headName || getDepartmentHeadName(department.headId),
     });
     setIsEditDialogOpen(true);
   };
@@ -269,28 +271,13 @@ const Department: React.FC = () => {
 
               <FormField
                 control={form.control}
-                name="headId"
+                name="headName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Head of Department</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select head of department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {people?.map((person) => (
-                          <SelectItem key={person.id} value={person.id.toString()}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter head of department name" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -337,28 +324,13 @@ const Department: React.FC = () => {
 
               <FormField
                 control={form.control}
-                name="headId"
+                name="headName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Head of Department</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select head of department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {people?.map((person) => (
-                          <SelectItem key={person.id} value={person.id.toString()}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter head of department name" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
