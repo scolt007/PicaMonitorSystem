@@ -13,7 +13,7 @@ import NewPica from "./pages/new-pica";
 import CalendarPica from "./pages/calendar-pica";
 import PicaProgress from "./pages/pica-progress";
 import PersonInCharge from "./pages/person-in-charge";
-import People from "./pages/people";
+
 import Department from "./pages/department";
 import ProjectJob from "./pages/project-job";
 import User from "./pages/user";
@@ -96,12 +96,6 @@ function RoutesWithAuth() {
       <ProtectedRoute path="/person-in-charge" component={(params) => (
         <Layout>
           <PersonInCharge {...params} />
-        </Layout>
-      )} adminOnly={true} />
-      
-      <ProtectedRoute path="/people" component={(params) => (
-        <Layout>
-          <People {...params} />
         </Layout>
       )} adminOnly={true} />
       

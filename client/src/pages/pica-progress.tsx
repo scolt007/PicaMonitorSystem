@@ -454,21 +454,18 @@ const PicaProgress: React.FC = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="progress">Progress</SelectItem>
-                            <SelectItem value="complete">Complete</SelectItem>
-                            <SelectItem value="overdue">Overdue</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={field.value}
+                            onChange={field.onChange}
+                          >
+                            <option value="" disabled>Select a status</option>
+                            <option value="progress">Progress</option>
+                            <option value="complete">Complete</option>
+                            <option value="overdue">Overdue</option>
+                          </select>
+                        </FormControl>
                       </FormItem>
                     )}
                   />
