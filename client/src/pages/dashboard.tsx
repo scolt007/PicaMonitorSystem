@@ -222,53 +222,17 @@ const Dashboard: React.FC = () => {
     return deptStats;
   }, [deptStats]);
   
-  // Calculate job statistics based on filtered PICAs
+  // Calculate job statistics based on data from the API
   const calcFilteredJobStats = React.useMemo(() => {
-    if (!picas || !jobStats) return [];
-    
-    // Filter by date range
-    let filtered = picas;
-    if (dateRange.start && dateRange.end) {
-      const startDate = new Date(dateRange.start);
-      const endDate = new Date(dateRange.end);
-      endDate.setHours(23, 59, 59, 999); // Include the entire end day
-      
-      filtered = filtered.filter((pica) => {
-        const picaDate = new Date(pica.date);
-        return picaDate >= startDate && picaDate <= endDate;
-      });
+    // Use the pre-calculated job stats directly from the API
+    if (!jobStats || !Array.isArray(jobStats)) {
+      return [];
     }
     
-    // Group by job
-    const jobMap: Record<string, { job: string, progress: number, complete: number, overdue: number }> = {};
-    
-    // Initialize with existing jobs
-    if (Array.isArray(jobStats)) {
-      jobStats.forEach(job => {
-        jobMap[job.job] = { 
-          job: job.job, 
-          progress: 0, 
-          complete: 0, 
-          overdue: 0 
-        };
-      });
-    }
-    
-    // Count PICAs by job and status
-    filtered.forEach(pica => {
-      const jobName = pica.projectSite?.code || 'Unknown';
-      
-      if (!jobMap[jobName]) {
-        jobMap[jobName] = { job: jobName, progress: 0, complete: 0, overdue: 0 };
-      }
-      
-      if (pica.status === 'progress') jobMap[jobName].progress++;
-      if (pica.status === 'complete') jobMap[jobName].complete++;
-      if (pica.status === 'overdue') jobMap[jobName].overdue++;
-    });
-    
-    return Object.values(jobMap);
-  }, [picas, jobStats, dateRange]);
+    // For date filtering, if needed, we could add a date range to the API query in the future
+    // For now, we'll just use the pre-calculated stats directly
+    return jobStats;
+  }, [jobStats]);
 
   // Filter PICAs by status and date range
   const filteredPicas = React.useMemo(() => {

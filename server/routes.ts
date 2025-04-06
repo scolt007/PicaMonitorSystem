@@ -121,6 +121,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to retrieve PICA project site statistics" });
     }
   });
+  
+  // Get PICA statistics by job
+  app.get(`${apiPrefix}/picas/stats/job`, async (req, res) => {
+    try {
+      // Fetch all PICAs and group them by project site with status counts
+      if (req.isAuthenticated() && req.user.organizationId) {
+        // Get the PICAs for this organization
+        const picas = await storage.getPicasByOrganization(req.user.organizationId);
+        // Get all project sites for this organization
+        const projectSites = await storage.getProjectSitesByOrganization(req.user.organizationId);
+        
+        // Create a map to store job stats
+        const jobStatsMap: Record<string, { job: string, progress: number, complete: number, overdue: number }> = {};
+        
+        // Initialize the map with all project sites
+        projectSites.forEach(site => {
+          jobStatsMap[site.code] = {
+            job: site.code,
+            progress: 0,
+            complete: 0,
+            overdue: 0
+          };
+        });
+        
+        // Count PICAs by site and status
+        picas.forEach(pica => {
+          // Find the site for this PICA
+          const site = projectSites.find(site => site.id === pica.projectSiteId);
+          if (site) {
+            // Increment the appropriate status counter
+            switch(pica.status) {
+              case 'progress':
+                jobStatsMap[site.code].progress += 1;
+                break;
+              case 'complete':
+                jobStatsMap[site.code].complete += 1;
+                break;
+              case 'overdue':
+                jobStatsMap[site.code].overdue += 1;
+                break;
+            }
+          }
+        });
+        
+        // Convert the map to an array
+        const jobStats = Object.values(jobStatsMap);
+        
+        return res.json(jobStats);
+      }
+      
+      // If not authenticated or no organization ID, return empty array
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching job stats:", error);
+      res.status(500).json({ message: "Failed to retrieve PICA job statistics" });
+    }
+  });
 
   // Get a single PICA by ID
   app.get(`${apiPrefix}/picas/:id`, async (req, res) => {
