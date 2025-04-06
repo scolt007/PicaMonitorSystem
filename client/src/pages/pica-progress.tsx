@@ -527,7 +527,7 @@ const PicaProgress: React.FC = () => {
                                 <span>
                                   Status changed to <StatusBadge status={history.newStatus} />
                                   {history.newStatus === 'complete' && (
-                                    <span className="ml-1 text-gray-600 text-xs">(11 Apr)</span>
+                                    <span className="ml-1 text-gray-600 text-xs">({formatDate(history.timestamp, true)})</span>
                                   )}
                                 </span>
                               </div>
