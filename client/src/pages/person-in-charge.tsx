@@ -72,6 +72,7 @@ const PersonInCharge: React.FC = () => {
       departmentId: null,
       position: "",
     },
+    mode: "onChange", // Validate on change
   });
   
   // Watch departmentId field to update selectedDepartmentId
@@ -198,13 +199,20 @@ const PersonInCharge: React.FC = () => {
   
   // Handle department selection and position auto-fill
   const handleDepartmentChange = (value: string, field: any) => {
+    console.log("Department change - selected value:", value);
+    
+    // Handle null value correctly
     const deptId = value === "null" ? null : parseInt(value);
     field.onChange(deptId);
     setSelectedDepartmentId(deptId);
     
+    console.log("Department change - deptId after conversion:", deptId);
+    
     // Auto-fill position if department has a position defined
     if (deptId && departments) {
       const selectedDept = departments.find(d => d.id === deptId);
+      console.log("Department change - found department:", selectedDept);
+      
       if (selectedDept && selectedDept.position) {
         form.setValue("position", selectedDept.position);
       } else {
@@ -339,7 +347,7 @@ const PersonInCharge: React.FC = () => {
                   <FormItem>
                     <FormLabel>Department</FormLabel>
                     <Select
-                      value={field.value?.toString() || ""}
+                      value={field.value === null ? "null" : field.value?.toString() || ""}
                       onValueChange={(value) => handleDepartmentChange(value, field)}
                     >
                       <FormControl>
@@ -438,7 +446,7 @@ const PersonInCharge: React.FC = () => {
                   <FormItem>
                     <FormLabel>Department</FormLabel>
                     <Select
-                      value={field.value?.toString() || ""}
+                      value={field.value === null ? "null" : field.value?.toString() || ""}
                       onValueChange={(value) => handleDepartmentChange(value, field)}
                     >
                       <FormControl>
