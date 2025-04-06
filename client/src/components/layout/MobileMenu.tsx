@@ -16,8 +16,7 @@ import {
   ChevronRight,
   User,
   UserCircle,
-  LogOut,
-  Building2Icon
+  LogOut
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -207,10 +206,10 @@ const MobileMenu = () => {
               </button>
               
               {userMenuOpen && (
-                <div className="bg-slate-800/50 p-3 border-t border-slate-700">
+                <div className="bg-slate-800 p-3 border-t border-slate-700">
                   <div className="flex flex-col space-y-3">
                     <div className="flex items-center px-2 py-1 text-sm text-slate-300">
-                      <Building2Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                      <Building2 className="w-4 h-4 mr-3 flex-shrink-0" />
                       <span className="break-words">{user.organizationName || `Organization ID: ${user.organizationId || "N/A"}`}</span>
                     </div>
                     <div className="flex items-center px-2 py-1 text-sm text-slate-300">

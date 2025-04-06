@@ -14,19 +14,10 @@ import {
   ChevronRight,
   User,
   UserCircle,
-  LogOut,
-  Building2Icon
+  LogOut
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5 mr-3" /> },
@@ -46,6 +37,8 @@ const Sidebar = () => {
   const [location] = useLocation();
   const { user, logout, isAuthenticated } = useAuth();
   const [dataSettingsOpen, setDataSettingsOpen] = useState(true);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Check if current location is one of the data settings pages
   const isDataSettingsPage = dataSettingItems.some(item => item.href === location);
@@ -56,6 +49,24 @@ const Sidebar = () => {
       setDataSettingsOpen(true);
     }
   }, [isDataSettingsPage, dataSettingsOpen]);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        userDropdownOpen &&
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setUserDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [userDropdownOpen]);
 
   // Handle logout
   const handleLogout = () => {
@@ -129,46 +140,58 @@ const Sidebar = () => {
         <div className="border-t border-slate-800">
           {/* User Profile Section */}
           {isAuthenticated && user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-full text-left p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <UserCircle className="w-5 h-5 mr-3" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{user.name}</span>
-                        <span className="text-xs text-slate-400">{user.username}</span>
-                      </div>
+            <div ref={dropdownRef} className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="w-full text-left p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <UserCircle className="w-5 h-5 mr-3" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-slate-400">{user.username}</span>
                     </div>
+                  </div>
+                  {userDropdownOpen ? (
                     <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </div>
+              </button>
+              
+              {userDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full bg-slate-800 border border-slate-700 shadow-lg rounded-b-md z-50">
+                  <div className="p-3 border-b border-slate-700">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium text-white">{user.name}</p>
+                      <p className="text-xs text-slate-400">{user.username}</p>
+                      {user.email && <p className="text-xs text-slate-400">{user.email}</p>}
+                    </div>
                   </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 z-50" align="end">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
+                  
+                  <div className="p-2">
+                    <div className="flex items-center px-2 py-2 text-sm text-slate-300">
+                      <Building2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{user.organizationName || `Organization ID: ${user.organizationId || "N/A"}`}</span>
+                    </div>
+                    <div className="flex items-center px-2 py-2 text-sm text-slate-300">
+                      <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>Role: {user.role || "User"}</span>
+                    </div>
                   </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center">
-                  <Building2Icon className="w-4 h-4 mr-2" />
-                  <span className="text-sm truncate">Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  <span>Role: {user.role || "User"}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center text-destructive cursor-pointer" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-2 border-t border-slate-700 text-sm text-red-400 hover:bg-slate-700"
+                  >
+                    <LogOut className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <Link href="/auth">
               <div className="p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
