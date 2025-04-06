@@ -131,7 +131,7 @@ const Sidebar = () => {
           {isAuthenticated && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <button className="w-full text-left p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <UserCircle className="w-5 h-5 mr-3" />
@@ -142,9 +142,9 @@ const Sidebar = () => {
                     </div>
                     <ChevronDown className="w-4 h-4" />
                   </div>
-                </div>
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-64 z-50" align="end">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.name}</p>
@@ -156,7 +156,7 @@ const Sidebar = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="flex items-center">
                   <Building2Icon className="w-4 h-4 mr-2" />
-                  <span>Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
+                  <span className="text-sm truncate">Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="flex items-center">
                   <User className="w-4 h-4 mr-2" />

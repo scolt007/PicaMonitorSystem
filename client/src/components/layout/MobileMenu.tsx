@@ -188,42 +188,40 @@ const MobileMenu = () => {
           {/* User Profile Section */}
           {isAuthenticated && user ? (
             <div>
-              <div 
-                className="p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer"
+              <button 
+                className="w-full text-left p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer flex items-center justify-between"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <UserCircle className="w-5 h-5 mr-3" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-slate-400">{user.username}</span>
-                    </div>
+                <div className="flex items-center">
+                  <UserCircle className="w-5 h-5 mr-3" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{user.name}</span>
+                    <span className="text-xs text-slate-400">{user.username}</span>
                   </div>
-                  {userMenuOpen ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
                 </div>
-              </div>
+                {userMenuOpen ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </button>
               
               {userMenuOpen && (
                 <div className="bg-slate-800/50 p-3 border-t border-slate-700">
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-3">
                     <div className="flex items-center px-2 py-1 text-sm text-slate-300">
-                      <Building2Icon className="w-4 h-4 mr-3" />
-                      <span>Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
+                      <Building2Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                      <span className="break-words">{user.organizationName || `Organization ID: ${user.organizationId || "N/A"}`}</span>
                     </div>
                     <div className="flex items-center px-2 py-1 text-sm text-slate-300">
-                      <User className="w-4 h-4 mr-3" />
+                      <User className="w-4 h-4 mr-3 flex-shrink-0" />
                       <span>Role: {user.role || "User"}</span>
                     </div>
                     <button 
                       onClick={handleLogout}
-                      className="flex items-center mt-2 px-2 py-1.5 text-sm text-red-400 hover:bg-slate-700 rounded"
+                      className="flex items-center mt-2 px-2 py-1.5 text-sm text-red-400 hover:bg-slate-700 rounded w-full"
                     >
-                      <LogOut className="w-4 h-4 mr-3" />
+                      <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
                       <span>Logout</span>
                     </button>
                   </div>
