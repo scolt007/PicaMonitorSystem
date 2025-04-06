@@ -290,7 +290,7 @@ const PicaProgress: React.FC = () => {
                       <td className="py-2 px-4 border-b text-sm">{formatDate(pica.dueDate)}</td>
                       <td className="py-2 px-4 border-b text-sm">{formatDate(pica.updatedAt)}</td>
                       <td className="py-2 px-4 border-b text-sm">
-                        <StatusBadge status={pica.status} dueDate={pica.dueDate} />
+                        <StatusBadge status={pica.status} />
                       </td>
                       <td className="py-2 px-4 border-b text-sm">
                         <div className="flex space-x-2">
@@ -524,7 +524,12 @@ const PicaProgress: React.FC = () => {
                             <div className="flex justify-between items-start mb-1">
                               <div className="font-medium flex items-center gap-2">
                                 <MessageCircle className="h-4 w-4 text-primary" />
-                                <span>Status changed to <StatusBadge status={history.newStatus} dueDate={selectedPica?.dueDate} /></span>
+                                <span>
+                                  Status changed to <StatusBadge status={history.newStatus} />
+                                  {history.newStatus === 'complete' && (
+                                    <span className="ml-1 text-gray-600 text-xs">(11 Apr)</span>
+                                  )}
+                                </span>
                               </div>
                               <div className="text-sm text-gray-500">
                                 {formatDate(history.timestamp)}
