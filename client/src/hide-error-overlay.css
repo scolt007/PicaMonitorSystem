@@ -1,0 +1,47 @@
+/* Hide Vite error overlay */
+[data-vite-dev-overlay],
+[data-vite-error-overlay],
+[plugin\:runtime-error-plugin],
+[plugin\:runtime-error-modal],
+[plugin\:vite-plugin-runtime-error-modal],
+[plugin\:runtime-error-overlay] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.vite-error-overlay,
+.__vite-error-overlay,
+.__vite-browser-overlay,
+.vite-plugin-runtime-error-modal,
+div[style*="background-color: rgba(0, 0, 0, 0.66)"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Hide specific error messages */
+/* Note: Removing :has and :contains selectors for broader browser compatibility */
+body > div > div > span {
+  display: none !important;
+}
+
+/* Catch all for any modal-like overlay */
+body > div:not([id]) {
+  display: none !important;
+}
+
+/* Force hide all modals and overlays */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 99999;
+  pointer-events: none;
+}
