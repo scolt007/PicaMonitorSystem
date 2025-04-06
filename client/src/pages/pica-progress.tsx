@@ -526,8 +526,8 @@ const PicaProgress: React.FC = () => {
                                 <MessageCircle className="h-4 w-4 text-primary" />
                                 <span>
                                   Status changed to <StatusBadge status={history.newStatus} />
-                                  {history.newStatus === 'complete' && (
-                                    <span className="ml-1 text-gray-600 text-xs">({formatDate(history.timestamp, true)})</span>
+                                  {history.newStatus === 'complete' && selectedPica && (
+                                    <span className="ml-1 text-gray-600 text-xs">({formatDate(selectedPica.updatedAt, true)})</span>
                                   )}
                                 </span>
                               </div>
