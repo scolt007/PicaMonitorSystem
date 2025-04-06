@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +59,7 @@ const ProjectJob: React.FC = () => {
       location: "",
       managerId: null,
     },
+    mode: "onChange", // Validate on change
   });
 
   // Create project job mutation
@@ -317,24 +317,23 @@ const ProjectJob: React.FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Manager</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select job manager" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {people?.map((person) => (
-                          <SelectItem key={person.id} value={person.id.toString()}>
+                    <FormControl>
+                      <select 
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={field.value === null ? "null" : field.value?.toString() || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "null" ? null : parseInt(value));
+                        }}
+                      >
+                        <option value="null">None</option>
+                        {people && people.map((person) => (
+                          <option key={person.id} value={person.id.toString()}>
                             {person.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -413,24 +412,23 @@ const ProjectJob: React.FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Job Manager</FormLabel>
-                    <Select
-                      value={field.value?.toString() || ""}
-                      onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select job manager" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
-                        {people?.map((person) => (
-                          <SelectItem key={person.id} value={person.id.toString()}>
+                    <FormControl>
+                      <select 
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={field.value === null ? "null" : field.value?.toString() || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "null" ? null : parseInt(value));
+                        }}
+                      >
+                        <option value="null">None</option>
+                        {people && people.map((person) => (
+                          <option key={person.id} value={person.id.toString()}>
                             {person.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
