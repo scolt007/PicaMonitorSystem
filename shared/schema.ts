@@ -17,6 +17,7 @@ export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   headId: integer("head_id"),
+  position: text("position"), // Position title that replaces the "Head of Department" field
   organizationId: integer("organization_id"), // Associated organization
 });
 

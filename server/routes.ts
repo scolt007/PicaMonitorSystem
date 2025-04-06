@@ -341,7 +341,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter by organization ID if user is authenticated
       if (req.isAuthenticated() && req.user.organizationId) {
         const departments = await storage.getDepartmentsByOrganization(req.user.organizationId);
-        return res.json(departments);
+        
+        // Add position field to each department
+        const departmentsWithPosition = departments.map(dept => ({
+          ...dept,
+          position: dept.position || ""
+        }));
+        
+        return res.json(departmentsWithPosition);
       }
       
       // If not authenticated or no organization ID, return empty array for data isolation
@@ -371,7 +378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have access to this department" });
       }
       
-      res.json(department);
+      // Add position field
+      const responseData = {
+        ...department,
+        position: department.position || "",
+      };
+      
+      res.json(responseData);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve department" });
     }
@@ -380,8 +393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new department (requires edit permission)
   app.post(`${apiPrefix}/departments`, canEdit, async (req, res) => {
     try {
-      // Extract headName from the request body if present
-      const { headName, ...restData } = req.body;
+      // Extract position field from the request body if present
+      const { position, ...restData } = req.body;
       
       // Parse the incoming data
       const rawData = insertDepartmentSchema.parse(restData);
@@ -398,10 +411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const department = await storage.createDepartment(departmentData);
       
-      // Add the headName to the response
+      // Add the position to the response
       const responseData = {
         ...department,
-        headName: headName || "",
+        position: position || "",
       };
       
       res.status(201).json(responseData);
@@ -422,8 +435,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid ID" });
       }
       
-      // Extract headName from the request body if present
-      const { headName, ...restData } = req.body;
+      // Extract position from the request body if present
+      const { position, ...restData } = req.body;
       
       const departmentData = insertDepartmentSchema.partial().parse(restData);
       const updatedDepartment = await storage.updateDepartment(id, departmentData);
@@ -432,10 +445,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Department not found" });
       }
       
-      // Add the headName to the response
+      // Add the position to the response
       const responseData = {
         ...updatedDepartment,
-        headName: headName || "",
+        position: position || "",
       };
       
       res.json(responseData);
