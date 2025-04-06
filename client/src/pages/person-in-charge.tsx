@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -360,24 +359,20 @@ const PersonInCharge: React.FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value === null ? "null" : field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value === null ? "null" : field.value?.toString() || ""}
+                        onChange={(e) => handleDepartmentChange(e.target.value, field)}
+                      >
+                        <option value="null">None</option>
                         {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
+                          <option key={department.id} value={department.id.toString()}>
                             {department.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -459,24 +454,20 @@ const PersonInCharge: React.FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Department</FormLabel>
-                    <Select
-                      value={field.value === null ? "null" : field.value?.toString() || ""}
-                      onValueChange={(value) => handleDepartmentChange(value, field)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">None</SelectItem>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value === null ? "null" : field.value?.toString() || ""}
+                        onChange={(e) => handleDepartmentChange(e.target.value, field)}
+                      >
+                        <option value="null">None</option>
                         {departments?.map((department) => (
-                          <SelectItem key={department.id} value={department.id.toString()}>
+                          <option key={department.id} value={department.id.toString()}>
                             {department.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -516,15 +507,18 @@ const PersonInCharge: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Person Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Person</DialogTitle>
           </DialogHeader>
-          <div className="my-4">
-            <p>Are you sure you want to delete {selectedPerson?.name}?</p>
-            <p className="text-sm text-gray-500 mt-1">This action cannot be undone.</p>
+          <div className="py-4 text-center">
+            <p>Are you sure you want to delete this person?</p>
+            <p className="font-medium my-2">
+              {selectedPerson?.name}
+            </p>
+            <p className="text-sm text-gray-500">This action cannot be undone.</p>
           </div>
           <DialogFooter>
             <Button

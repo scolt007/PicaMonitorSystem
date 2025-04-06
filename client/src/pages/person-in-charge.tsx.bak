@@ -237,7 +237,7 @@ const PersonInCharge: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Person In Charge</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">Person</h1>
       </div>
 
       <Card className="shadow">
@@ -258,6 +258,7 @@ const PersonInCharge: React.FC = () => {
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">ID</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Name</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Department</th>
+                  <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Position</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Email</th>
                   <th className="py-2 px-4 bg-primary text-white text-left text-sm font-medium">Action</th>
                 </tr>
@@ -270,6 +271,7 @@ const PersonInCharge: React.FC = () => {
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-16" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-32" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
+                      <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-48" /></td>
                       <td className="py-2 px-4 border-b text-sm"><Skeleton className="h-5 w-24" /></td>
                     </tr>
@@ -281,6 +283,7 @@ const PersonInCharge: React.FC = () => {
                       <td className="py-2 px-4 border-b text-sm">PIC{String(person.id).padStart(3, '0')}</td>
                       <td className="py-2 px-4 border-b text-sm">{person.name}</td>
                       <td className="py-2 px-4 border-b text-sm">{getDepartmentName(person.departmentId)}</td>
+                      <td className="py-2 px-4 border-b text-sm">{person.position || "-"}</td>
                       <td className="py-2 px-4 border-b text-sm">{person.email}</td>
                       <td className="py-2 px-4 border-b text-sm">
                         <div className="flex space-x-2">
@@ -304,8 +307,8 @@ const PersonInCharge: React.FC = () => {
                 ) : (
                   // Show no data message
                   <tr>
-                    <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
-                      No person in charge found
+                    <td colSpan={6} className="py-4 text-center text-sm text-gray-500">
+                      No person found
                     </td>
                   </tr>
                 )}
@@ -319,7 +322,7 @@ const PersonInCharge: React.FC = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Person In Charge</DialogTitle>
+            <DialogTitle>Add New Person</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitCreate)} className="space-y-4">
@@ -418,7 +421,7 @@ const PersonInCharge: React.FC = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Person In Charge</DialogTitle>
+            <DialogTitle>Edit Person</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
