@@ -197,6 +197,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Extended User type with organization name
+export type UserWithOrganization = User & {
+  organizationName?: string;
+};
+
 // PICA History schema and types
 export const insertPicaHistorySchema = createInsertSchema(picaHistory).omit({
   id: true,

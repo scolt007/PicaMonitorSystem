@@ -15,8 +15,11 @@ import {
   ChevronDown,
   ChevronRight,
   User,
-  UserCircle
+  UserCircle,
+  LogOut,
+  Building2Icon
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigationItems = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5 mr-3" /> },
@@ -34,9 +37,10 @@ const dataSettingItems = [
 
 const MobileMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  // Set data settings to be open by default
   const [dataSettingsOpen, setDataSettingsOpen] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, logout, isAuthenticated } = useAuth();
 
   // Check if current location is one of the data settings pages
   const isDataSettingsPage = dataSettingItems.some(item => item.href === location);
@@ -51,6 +55,12 @@ const MobileMenu = () => {
   // Close sidebar on link navigation
   const closeMenu = () => {
     setIsOpen(false);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    logout.mutate();
+    closeMenu();
   };
 
   // Close the menu when user clicks outside of it
@@ -106,7 +116,7 @@ const MobileMenu = () => {
         className={`fixed md:hidden top-0 left-0 h-full bg-slate-900 text-white z-50 mobile-menu transition-all duration-300 ease-in-out shadow-xl ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ width: '250px' }}
+        style={{ width: '280px' }}
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-800">
           <Logo />
@@ -175,13 +185,61 @@ const MobileMenu = () => {
         </div>
         
         <div className="absolute bottom-0 w-full border-t border-slate-800">
-          {/* User Sign In and Profile section */}
-          <div className="p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
-            <div className="flex items-center">
-              <UserCircle className="w-5 h-5 mr-3" />
-              <span>User Sign In / Profile</span>
+          {/* User Profile Section */}
+          {isAuthenticated && user ? (
+            <div>
+              <div 
+                className="p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <UserCircle className="w-5 h-5 mr-3" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-slate-400">{user.username}</span>
+                    </div>
+                  </div>
+                  {userMenuOpen ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </div>
+              </div>
+              
+              {userMenuOpen && (
+                <div className="bg-slate-800/50 p-3 border-t border-slate-700">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center px-2 py-1 text-sm text-slate-300">
+                      <Building2Icon className="w-4 h-4 mr-3" />
+                      <span>Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
+                    </div>
+                    <div className="flex items-center px-2 py-1 text-sm text-slate-300">
+                      <User className="w-4 h-4 mr-3" />
+                      <span>Role: {user.role || "User"}</span>
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      className="flex items-center mt-2 px-2 py-1.5 text-sm text-red-400 hover:bg-slate-700 rounded"
+                    >
+                      <LogOut className="w-4 h-4 mr-3" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <Link href="/auth">
+              <div className="p-3 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer" onClick={closeMenu}>
+                <div className="flex items-center">
+                  <UserCircle className="w-5 h-5 mr-3" />
+                  <span>Sign In</span>
+                </div>
+              </div>
+            </Link>
+          )}
           <div className="px-3 py-2 text-xs text-slate-500 text-center">
             PICA Monitor v1.0
           </div>

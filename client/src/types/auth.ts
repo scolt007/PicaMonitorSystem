@@ -14,3 +14,16 @@ export type RegisterPayload = {
   signupCode?: string;
   organizationName?: string;
 };
+
+export type UserType = {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+  isOrganizationAdmin: boolean | null;
+  createdAt: Date;
+  organizationId: number | null;
+  lastLogin: Date | null;
+  organizationName?: string; // Added for UI display purposes
+};

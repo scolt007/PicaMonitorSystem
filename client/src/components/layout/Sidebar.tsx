@@ -13,9 +13,20 @@ import {
   ChevronDown,
   ChevronRight,
   User,
-  UserCircle
+  UserCircle,
+  LogOut,
+  Building2Icon
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5 mr-3" /> },
@@ -33,7 +44,7 @@ const dataSettingItems = [
 
 const Sidebar = () => {
   const [location] = useLocation();
-  // Set data settings to be open by default
+  const { user, logout, isAuthenticated } = useAuth();
   const [dataSettingsOpen, setDataSettingsOpen] = useState(true);
   
   // Check if current location is one of the data settings pages
@@ -45,6 +56,11 @@ const Sidebar = () => {
       setDataSettingsOpen(true);
     }
   }, [isDataSettingsPage, dataSettingsOpen]);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout.mutate();
+  };
 
   return (
     <div className="hidden md:flex md:flex-shrink-0">
@@ -111,13 +127,58 @@ const Sidebar = () => {
         </div>
         
         <div className="border-t border-slate-800">
-          {/* User Sign In and Profile section */}
-          <div className="p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
-            <div className="flex items-center">
-              <UserCircle className="w-5 h-5 mr-3" />
-              <span>User Sign In / Profile</span>
-            </div>
-          </div>
+          {/* User Profile Section */}
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <UserCircle className="w-5 h-5 mr-3" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{user.name}</span>
+                        <span className="text-xs text-slate-400">{user.username}</span>
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex items-center">
+                  <Building2Icon className="w-4 h-4 mr-2" />
+                  <span>Organization: {user.organizationName || `ID: ${user.organizationId || "N/A"}`}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  <span>Role: {user.role || "User"}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex items-center text-destructive cursor-pointer" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/auth">
+              <div className="p-4 text-sm text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <div className="flex items-center">
+                  <UserCircle className="w-5 h-5 mr-3" />
+                  <span>Sign In</span>
+                </div>
+              </div>
+            </Link>
+          )}
           <div className="px-4 py-2 text-xs text-slate-500 text-center">
             PICA Monitor v1.0
           </div>

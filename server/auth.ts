@@ -21,6 +21,9 @@ declare global {
       password: string;
       createdAt: Date;
       lastLogin: Date | null;
+      isOrganizationAdmin: boolean | null;
+      organizationId: number | null;
+      organizationName?: string;
     }
   }
 }
@@ -157,7 +160,7 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: info.message || "Invalid credentials" });
       }
       
-      req.login(user, (loginErr) => {
+      req.login(user, async (loginErr) => {
         if (loginErr) {
           log(`Login error: ${loginErr}`, "auth");
           return next(loginErr);
@@ -165,6 +168,25 @@ export function setupAuth(app: Express) {
         
         // Don't send the password hash to the client
         const { password, ...userWithoutPassword } = user;
+        
+        // Update last login timestamp
+        await storage.updateUserLastLogin(user.id);
+        
+        // If the user belongs to an organization, fetch the organization name
+        if (userWithoutPassword.organizationId) {
+          try {
+            const organization = await storage.getOrganization(userWithoutPassword.organizationId);
+            if (organization) {
+              return res.json({
+                ...userWithoutPassword,
+                organizationName: organization.name
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching organization:", error);
+          }
+        }
+        
         return res.json(userWithoutPassword);
       });
     })(req, res, next);
@@ -216,6 +238,7 @@ export function setupAuth(app: Express) {
         
         // Create a new organization if a name is provided
         if (organizationName) {
+          // 1. Create a new organization
           const newOrg = await storage.createOrganization({
             name: organizationName,
             hasPaid: false,
@@ -223,6 +246,36 @@ export function setupAuth(app: Express) {
           });
           
           organizationId = newOrg.id;
+          
+          // 2. Initialize default data for this organization
+          try {
+            // Setup default departments for this organization
+            await storage.createDepartment({
+              name: "Engineering",
+              headId: null,
+              organizationId: newOrg.id
+            });
+            
+            await storage.createDepartment({
+              name: "Operations",
+              headId: null,
+              organizationId: newOrg.id
+            });
+            
+            // Setup a default project site
+            await storage.createProjectSite({
+              name: "Headquarters",
+              code: `${organizationName.substring(0, 3).toUpperCase()}-HQ`,
+              location: "Main Office",
+              managerId: null,
+              organizationId: newOrg.id
+            });
+            
+            console.log(`Successfully initialized default data for organization: ${organizationName} (ID: ${newOrg.id})`);
+          } catch (initError) {
+            console.error(`Error initializing data for new organization: ${initError}`);
+            // Continue with user creation even if default data initialization fails
+          }
         }
       }
       
@@ -247,6 +300,15 @@ export function setupAuth(app: Express) {
         
         // Don't send the password hash to the client
         const { password, ...userWithoutPassword } = newUser;
+        
+        // Add organization name to the response if it exists
+        if (organizationName) {
+          return res.status(201).json({
+            ...userWithoutPassword,
+            organizationName
+          });
+        }
+        
         return res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
@@ -256,13 +318,29 @@ export function setupAuth(app: Express) {
   });
 
   // Current user info route
-  app.get("/api/auth/user", (req, res) => {
+  app.get("/api/auth/user", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     
     // Don't send the password hash to the client
     const { password, ...userWithoutPassword } = req.user as User;
+    
+    // If the user belongs to an organization, fetch the organization name
+    if (userWithoutPassword.organizationId) {
+      try {
+        const organization = await storage.getOrganization(userWithoutPassword.organizationId);
+        if (organization) {
+          return res.json({
+            ...userWithoutPassword,
+            organizationName: organization.name
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching organization:", error);
+      }
+    }
+    
     res.json(userWithoutPassword);
   });
 
