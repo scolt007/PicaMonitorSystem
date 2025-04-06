@@ -14,7 +14,7 @@ import CalendarPica from "./pages/calendar-pica";
 import PicaProgress from "./pages/pica-progress";
 import PersonInCharge from "./pages/person-in-charge";
 import Department from "./pages/department";
-import ProjectSite from "./pages/project-site";
+import ProjectJob from "./pages/project-job";
 import User from "./pages/user";
 import Auth from "./pages/auth";
 import NotFound from "./pages/not-found";
@@ -100,9 +100,9 @@ function RoutesWithAuth() {
         </Layout>
       )} adminOnly={true} />
       
-      <ProtectedRoute path="/project-site" component={(params) => (
+      <ProtectedRoute path="/project-job" component={(params) => (
         <Layout>
-          <ProjectSite {...params} />
+          <ProjectJob {...params} />
         </Layout>
       )} adminOnly={true} />
       

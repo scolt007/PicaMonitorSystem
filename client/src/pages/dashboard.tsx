@@ -55,8 +55,8 @@ const Dashboard: React.FC = () => {
     overdue: number;
   };
   
-  type SiteStat = {
-    site: string;
+  type JobStat = {
+    job: string;
     progress: number;
     complete: number;
     overdue: number;
@@ -72,9 +72,9 @@ const Dashboard: React.FC = () => {
     queryKey: ['/api/picas/stats/department'],
   });
   
-  // Load site statistics
-  const { data: siteStats, isLoading: siteStatsLoading } = useQuery<SiteStat[]>({ 
-    queryKey: ['/api/picas/stats/site'],
+  // Load job statistics
+  const { data: jobStats, isLoading: jobStatsLoading } = useQuery<JobStat[]>({ 
+    queryKey: ['/api/picas/stats/job'],
   });
   
   // Load all PICAs with relations
@@ -212,9 +212,9 @@ const Dashboard: React.FC = () => {
     return deptStats;
   }, [deptStats]);
   
-  // Calculate site statistics based on filtered PICAs
-  const calcFilteredSiteStats = React.useMemo(() => {
-    if (!picas || !siteStats) return [];
+  // Calculate job statistics based on filtered PICAs
+  const calcFilteredJobStats = React.useMemo(() => {
+    if (!picas || !jobStats) return [];
     
     // Filter by date range
     let filtered = picas;
@@ -229,14 +229,14 @@ const Dashboard: React.FC = () => {
       });
     }
     
-    // Group by site
-    const siteMap: Record<string, { site: string, progress: number, complete: number, overdue: number }> = {};
+    // Group by job
+    const jobMap: Record<string, { job: string, progress: number, complete: number, overdue: number }> = {};
     
-    // Initialize with existing sites
-    if (Array.isArray(siteStats)) {
-      siteStats.forEach(site => {
-        siteMap[site.site] = { 
-          site: site.site, 
+    // Initialize with existing jobs
+    if (Array.isArray(jobStats)) {
+      jobStats.forEach(job => {
+        jobMap[job.job] = { 
+          job: job.job, 
           progress: 0, 
           complete: 0, 
           overdue: 0 
@@ -244,21 +244,21 @@ const Dashboard: React.FC = () => {
       });
     }
     
-    // Count PICAs by site and status
+    // Count PICAs by job and status
     filtered.forEach(pica => {
-      const siteName = pica.projectSite?.code || 'Unknown';
+      const jobName = pica.projectSite?.code || 'Unknown';
       
-      if (!siteMap[siteName]) {
-        siteMap[siteName] = { site: siteName, progress: 0, complete: 0, overdue: 0 };
+      if (!jobMap[jobName]) {
+        jobMap[jobName] = { job: jobName, progress: 0, complete: 0, overdue: 0 };
       }
       
-      if (pica.status === 'progress') siteMap[siteName].progress++;
-      if (pica.status === 'complete') siteMap[siteName].complete++;
-      if (pica.status === 'overdue') siteMap[siteName].overdue++;
+      if (pica.status === 'progress') jobMap[jobName].progress++;
+      if (pica.status === 'complete') jobMap[jobName].complete++;
+      if (pica.status === 'overdue') jobMap[jobName].overdue++;
     });
     
-    return Object.values(siteMap);
-  }, [picas, siteStats, dateRange]);
+    return Object.values(jobMap);
+  }, [picas, jobStats, dateRange]);
 
   // Filter PICAs by status and date range
   const filteredPicas = React.useMemo(() => {
@@ -417,36 +417,36 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold">Project PICA Summary</h3>
           </div>
-          {siteStatsLoading ? (
+          {jobStatsLoading ? (
             <Skeleton className="w-full h-[100px]" />
           ) : (
             <div className="overflow-hidden">
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b">
-                    <th className="text-xs font-medium text-gray-700 py-1 px-2 text-left">Site</th>
+                    <th className="text-xs font-medium text-gray-700 py-1 px-2 text-left">Job</th>
                     <th className="text-xs font-medium text-blue-600 py-1 px-2 text-center">Progress</th>
                     <th className="text-xs font-medium text-green-600 py-1 px-2 text-center">Complete</th>
                     <th className="text-xs font-medium text-red-600 py-1 px-2 text-center">Overdue</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {calcFilteredSiteStats.map((site, index) => (
+                  {calcFilteredJobStats.map((job, index) => (
                     <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="text-xs font-medium text-gray-800 py-1 px-2">{site.site}</td>
+                      <td className="text-xs font-medium text-gray-800 py-1 px-2">{job.job}</td>
                       <td className="text-xs font-medium text-blue-600 py-1 px-2 text-center">
                         <span className="inline-block bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">
-                          {site.progress}
+                          {job.progress}
                         </span>
                       </td>
                       <td className="text-xs font-medium text-green-600 py-1 px-2 text-center">
                         <span className="inline-block bg-green-100 text-green-700 rounded-full px-2 py-0.5">
-                          {site.complete}
+                          {job.complete}
                         </span>
                       </td>
                       <td className="text-xs font-medium text-red-600 py-1 px-2 text-center">
                         <span className="inline-block bg-red-100 text-red-700 rounded-full px-2 py-0.5">
-                          {site.overdue}
+                          {job.overdue}
                         </span>
                       </td>
                     </tr>
