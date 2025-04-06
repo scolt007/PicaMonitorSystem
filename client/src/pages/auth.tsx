@@ -85,7 +85,37 @@ const AuthPage = () => {
   };
 
   // Handle register submit
-  const onRegisterSubmit = (data: RegisterFormValues) => {
+  const onRegisterSubmit = async (data: RegisterFormValues) => {
+    // If creating an organization, handle differently
+    if (data.signupCode && data.organizationName) {
+      try {
+        // First, create the organization
+        const orgResponse = await fetch('/api/organizations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.organizationName,
+            promoCode: data.signupCode === 'FREEPICA0425' ? data.signupCode : undefined,
+          }),
+        });
+        
+        if (!orgResponse.ok) {
+          throw new Error('Failed to create organization');
+        }
+        
+        const orgData = await orgResponse.json();
+        
+        // Now navigate to checkout with the organization ID
+        navigate(`/checkout?orgId=${orgData.id}&orgName=${encodeURIComponent(data.organizationName)}`);
+        return;
+      } catch (error) {
+        console.error('Error creating organization:', error);
+      }
+    }
+    
+    // Regular user registration
     const registerPayload: RegisterPayload = {
       username: data.username,
       password: data.password,

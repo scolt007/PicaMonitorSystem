@@ -380,13 +380,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new department (requires edit permission)
   app.post(`${apiPrefix}/departments`, canEdit, async (req, res) => {
     try {
-      const departmentData = insertDepartmentSchema.parse(req.body);
+      // Parse the incoming data
+      const rawData = insertDepartmentSchema.parse(req.body);
+      
+      // Add the user's organizationId to ensure proper data isolation
+      if (!req.user || !req.user.organizationId) {
+        return res.status(400).json({ message: "Organization ID is required to create a department" });
+      }
+
+      const departmentData = {
+        ...rawData,
+        organizationId: req.user.organizationId,
+      };
+      
       const department = await storage.createDepartment(departmentData);
       res.status(201).json(department);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid department data", errors: error.errors });
       }
+      console.error("Department creation error:", error);
       res.status(500).json({ message: "Failed to create department" });
     }
   });
@@ -480,13 +493,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new project site (requires edit permission)
   app.post(`${apiPrefix}/project-sites`, canEdit, async (req, res) => {
     try {
-      const projectSiteData = insertProjectSiteSchema.parse(req.body);
+      // Parse the incoming data
+      const rawData = insertProjectSiteSchema.parse(req.body);
+      
+      // Add the user's organizationId to ensure proper data isolation
+      if (!req.user || !req.user.organizationId) {
+        return res.status(400).json({ message: "Organization ID is required to create a project site" });
+      }
+      
+      const projectSiteData = {
+        ...rawData,
+        organizationId: req.user.organizationId,
+      };
+      
       const projectSite = await storage.createProjectSite(projectSiteData);
       res.status(201).json(projectSite);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid project site data", errors: error.errors });
       }
+      console.error("Project site creation error:", error);
       res.status(500).json({ message: "Failed to create project site" });
     }
   });
