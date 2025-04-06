@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,13 +50,7 @@ const AuthPage = () => {
   const [, navigate] = useLocation();
   const { user, login, register, isAuthenticated } = useAuth();
 
-  // Redirect if already logged in
-  if (isAuthenticated && user) {
-    navigate("/dashboard");
-    return null;
-  }
-
-  // Login form
+  // Define form hooks first
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -65,7 +59,6 @@ const AuthPage = () => {
     },
   });
 
-  // Register form
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -78,6 +71,13 @@ const AuthPage = () => {
       organizationName: "",
     },
   });
+  
+  // Use useEffect for redirection to avoid React hooks rule violation
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Handle login submit
   const onLoginSubmit = (data: LoginFormValues) => {
