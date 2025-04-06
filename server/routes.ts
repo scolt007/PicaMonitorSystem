@@ -406,6 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const departmentData = {
         ...rawData,
+        position: position || "",  // Include position field in the data to save
         organizationId: req.user.organizationId,
       };
       
@@ -438,7 +439,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract position from the request body if present
       const { position, ...restData } = req.body;
       
-      const departmentData = insertDepartmentSchema.partial().parse(restData);
+      // Include the position in the department data for update
+      const departmentData = {
+        ...insertDepartmentSchema.partial().parse(restData),
+        position: position || ""
+      };
       const updatedDepartment = await storage.updateDepartment(id, departmentData);
       
       if (!updatedDepartment) {
