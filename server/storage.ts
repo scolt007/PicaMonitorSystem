@@ -397,11 +397,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePica(id: number): Promise<boolean> {
-    const result = await db
-      .delete(picas)
-      .where(eq(picas.id, id))
-      .returning({ id: picas.id });
-    return result.length > 0;
+    try {
+      // First, delete all history records for this PICA
+      await db
+        .delete(picaHistory)
+        .where(eq(picaHistory.picaId, id));
+      
+      // Then delete the PICA itself
+      const result = await db
+        .delete(picas)
+        .where(eq(picas.id, id))
+        .returning({ id: picas.id });
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error in deletePica:", error);
+      return false;
+    }
   }
 
   async getPicasByStatus(status: string): Promise<Pica[]> {
