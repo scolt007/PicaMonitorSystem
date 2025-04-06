@@ -64,6 +64,11 @@ const NewPica: React.FC = () => {
   const [selectedProjectSite, setSelectedProjectSite] = useState<string>("");
   const [masterPicaId, setMasterPicaId] = useState<string>("");
 
+  // Fetch existing PICAs to check latest sequence numbers
+  const { data: existingPicas } = useQuery<any[]>({
+    queryKey: ["/api/picas"],
+  });
+
   // Generate Master PICA ID based on selected project site
   const generateMasterPicaId = (siteCode: string) => {
     // Generate a date-based ID: MMYY + SiteCode
@@ -112,18 +117,83 @@ const NewPica: React.FC = () => {
     if (projectSites && projectSites.length > 0) {
       const site = projectSites.find((site) => site.id.toString() === value);
       if (site) {
-        const newMasterPicaId = generateMasterPicaId(site.code);
+        // Generate base master PICA ID
+        const baseMasterPicaId = generateMasterPicaId(site.code);
+        
+        // Check for existing PICAs with the same base ID
+        let highestSequence = 0;
+        let suffixCounter = 0;
+        
+        if (existingPicas && existingPicas.length > 0) {
+          // Extract PICAs with the same base ID format (MMYY + site.code)
+          const now = new Date();
+          const month = String(now.getMonth() + 1).padStart(2, "0");
+          const year = String(now.getFullYear()).slice(-2);
+          const baseIdPattern = `${month}${year}${site.code}`;
+          
+          // Find existing PICAs that match the pattern
+          const relatedPicas = existingPicas.filter(pica => 
+            pica.picaId.startsWith(baseIdPattern) || 
+            pica.picaId.startsWith(`${baseIdPattern}-`)
+          );
+          
+          // Check if we need to add a suffix
+          if (relatedPicas.length > 0) {
+            // Get all used suffixes like -1, -2, etc.
+            const usedSuffixes = relatedPicas
+              .map(pica => {
+                const match = pica.picaId.match(new RegExp(`^${baseIdPattern}(?:-([0-9]+))?`));
+                return match && match[1] ? parseInt(match[1]) : 0;
+              })
+              .filter(suffix => suffix !== null);
+            
+            // If we have any base IDs without a suffix (suffix === 0), increment the counter
+            if (usedSuffixes.includes(0)) {
+              suffixCounter = Math.max(...usedSuffixes) + 1;
+            }
+            
+            // Get the highest sequence number used across all related PICAs
+            highestSequence = relatedPicas.reduce((max, pica) => {
+              const seq = parseInt(pica.picaId.slice(-2));
+              return isNaN(seq) ? max : Math.max(max, seq);
+            }, 0);
+          }
+        }
+        
+        // Add suffix if needed
+        const newMasterPicaId = suffixCounter > 0 
+          ? `${baseMasterPicaId}-${suffixCounter}` 
+          : baseMasterPicaId;
+        
         setMasterPicaId(newMasterPicaId);
         form.setValue("masterPicaId", newMasterPicaId);
         form.setValue("projectSiteId", parseInt(value));
+        
+        // Update the sequence numbers for existing fields
+        if (highestSequence > 0) {
+          const updatedFields = fields.map((field, index) => ({
+            ...field,
+            sequence: highestSequence + index + 1
+          }));
+          
+          // Update each field's sequence in the form
+          updatedFields.forEach((field, index) => {
+            form.setValue(`picaItems.${index}.sequence`, field.sequence);
+          });
+        }
       }
     }
   };
 
   // Add a new PICA item row
   const handleAddPicaItem = () => {
+    // Get the last sequence number from existing fields
+    const lastSequence = fields.length > 0 
+      ? form.getValues(`picaItems.${fields.length - 1}.sequence`) 
+      : 0;
+    
     append({
-      sequence: fields.length + 1,
+      sequence: lastSequence + 1,
       issue: "",
       problemIdentification: "",
       correctiveAction: "",
