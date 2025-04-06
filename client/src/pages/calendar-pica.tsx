@@ -88,8 +88,13 @@ const CalendarPica: React.FC = () => {
     
     return filteredPicas.filter((pica) => {
       const picaDate = parseISO(pica.date);
-      const picaDueDate = parseISO(pica.dueDate);
-      return isSameMonth(picaDate, currentMonth) || isSameMonth(picaDueDate, currentMonth);
+      
+      // For completed PICAs, use the updatedAt (completion date) instead of due date
+      const dateToCompare = pica.status === 'complete' 
+        ? new Date(pica.updatedAt) 
+        : parseISO(pica.dueDate);
+        
+      return isSameMonth(picaDate, currentMonth) || isSameMonth(dateToCompare, currentMonth);
     });
   }, [filteredPicas, currentMonth]);
 
@@ -99,7 +104,12 @@ const CalendarPica: React.FC = () => {
     
     return picasInMonth.filter((pica) => {
       const picaDate = parseISO(pica.date);
-      const picaDueDate = parseISO(pica.dueDate);
+      
+      // For completed PICAs, use the updatedAt (completion date) instead of due date
+      // For other PICAs, use the due date
+      const dateToCompare = pica.status === 'complete' 
+        ? new Date(pica.updatedAt) 
+        : parseISO(pica.dueDate);
       
       const isSameDay = (date1: Date, date2: Date) => {
         return date1.getDate() === date2.getDate() && 
@@ -107,7 +117,7 @@ const CalendarPica: React.FC = () => {
                date1.getFullYear() === date2.getFullYear();
       };
       
-      return isSameDay(picaDate, day) || isSameDay(picaDueDate, day);
+      return isSameDay(picaDate, day) || isSameDay(dateToCompare, day);
     });
   };
 
@@ -266,6 +276,9 @@ const CalendarPica: React.FC = () => {
                               <div><strong>Action:</strong> {pica.correctiveAction}</div>
                               <div><strong>Created:</strong> {formatDate(pica.date)}</div>
                               <div><strong>Due:</strong> {formatDate(pica.dueDate)}</div>
+                              {pica.status === 'complete' && (
+                                <div><strong>Completed:</strong> {formatDate(pica.updatedAt)}</div>
+                              )}
                               <div><strong>Project:</strong> {pica.projectSite?.name || 'Unknown'}</div>
                               <div><strong>PIC:</strong> {pica.personInCharge?.name || 'Unknown'}</div>
                             </div>
