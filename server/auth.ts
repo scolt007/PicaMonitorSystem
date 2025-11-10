@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User, UserRole } from "@shared/schema";
-import { log } from "./vite";
+import { log } from "./logger";
 
 // Use TypeScript to enhance Express Request object
 declare global {
