@@ -2,11 +2,26 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// CORS configuration - Allow Firebase frontend to access Render backend
+app.use(cors({
+  origin: [
+    'https://picamanager.web.app',
+    'https://picamanager.firebaseapp.com',
+    'http://localhost:5173', // For local development
+    'http://localhost:5000'
+  ],
+  credentials: true, // Allow cookies for session
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

@@ -9,7 +9,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(npm run build:backend:*)"
+      "Bash(npm run build:backend:*)",
+      "Bash(tsx:*)",
+      "Bash(npx tsx:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_s23GzgXSrHOU@ep-gentle-brook-a1nhsvgx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require\" npx tsx:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
