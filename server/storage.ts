@@ -770,10 +770,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async validatePromoCode(promoCode: string): Promise<boolean> {
-    // For now, just validate against our hardcoded promo code
-    return promoCode === "FREEPICA0425" && 
-           new Date() >= new Date("2025-04-01") && 
-           new Date() <= new Date("2025-04-30");
+    // Valid promo codes (no expiration for now)
+    const validCodes = [
+      "FREEPICA0425",  // Original code
+      "FREEPICA2025",  // Updated code for 2025
+      "PICAFREE"       // Simple code
+    ];
+
+    return validCodes.includes(promoCode.toUpperCase());
   }
 
   // User methods
