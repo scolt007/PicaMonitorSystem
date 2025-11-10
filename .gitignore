@@ -4,3 +4,12 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment variables (IMPORTANT: Never commit secrets!)
+.env
+.env.local
+.env.production.local
+
+# Firebase
+.firebase/
+firebase-debug.log

@@ -19,8 +19,6 @@ import ProjectJob from "./pages/project-job";
 import User from "./pages/user";
 import Auth from "./pages/auth";
 import NotFound from "./pages/not-found";
-import CheckoutPage from "./pages/checkout";
-import PaymentSuccessPage from "./pages/payment-success";
 
 // Routes wrapper component that checks authentication
 function RoutesWithAuth() {
@@ -35,8 +33,6 @@ function RoutesWithAuth() {
     <Switch>
       {/* Public routes */}
       <Route path="/auth" component={Auth} />
-      <Route path="/checkout" component={CheckoutPage} />
-      <Route path="/payment-success" component={PaymentSuccessPage} />
       
       {/* Redirect to auth if not authenticated */}
       <Route path="/">

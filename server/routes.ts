@@ -2,28 +2,21 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { 
-  insertPicaSchema, 
-  insertPersonSchema, 
-  insertDepartmentSchema, 
-  insertProjectSiteSchema, 
+import {
+  insertPicaSchema,
+  insertPersonSchema,
+  insertDepartmentSchema,
+  insertProjectSiteSchema,
   insertUserSchema,
   insertOrganizationSchema
 } from "@shared/schema";
 import { setupAuth, canEdit, canDelete, hashPassword } from "./auth";
-import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   // API prefix
   const apiPrefix = '/api';
-  
-  // Initialize Stripe if secret key is provided
-  let stripe: Stripe | undefined;
-  if (process.env.STRIPE_SECRET_KEY) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  }
   
   // --- PICA Routes ---
   // Get all PICAs with relations (public can view)
@@ -957,137 +950,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --- Payment Routes ---
+  // --- Payment Routes (Promo Code Only) ---
   // Validate promo code
   app.post(`${apiPrefix}/validate-promo-code`, async (req, res) => {
     try {
       const { promoCode } = req.body;
-      
+
       if (!promoCode) {
-        return res.status(400).json({ 
-          valid: false, 
-          message: "No promo code provided" 
+        return res.status(400).json({
+          valid: false,
+          message: "No promo code provided"
         });
       }
-      
+
       // Check if promo code is valid
       const isValid = await storage.validatePromoCode(promoCode);
-      
+
       if (isValid) {
-        return res.json({ 
-          valid: true, 
+        return res.json({
+          valid: true,
           discount: 100, // 100% discount
-          message: "Promo code applied successfully!" 
+          message: "Promo code applied successfully!"
         });
       } else {
-        return res.json({ 
-          valid: false, 
-          message: "Invalid promo code" 
+        return res.json({
+          valid: false,
+          message: "Invalid promo code"
         });
       }
     } catch (error: any) {
-      res.status(500).json({ 
+      res.status(500).json({
         valid: false,
-        message: `Error validating promo code: ${error.message}` 
+        message: `Error validating promo code: ${error.message}`
       });
     }
   });
 
-  // Create a payment intent for the one-time registration fee
-  app.post(`${apiPrefix}/create-payment-intent`, async (req, res) => {
-    try {
-      // Check if promo code was provided
-      const { promoCode } = req.body;
-      
-      // If promo code is valid, no payment is needed
-      if (promoCode) {
-        const isValid = await storage.validatePromoCode(promoCode);
-        if (isValid) {
-          return res.json({
-            freeRegistration: true,
-            message: "Registration is free with this promo code!",
-            amount: 0
-          });
-        }
-      }
-      
-      if (!stripe) {
-        return res.status(500).json({ 
-          message: "Stripe is not configured. Contact administrator." 
-        });
-      }
-
-      // Fixed amount for the one-time registration fee: $10.00
-      const amount = 1000; // in cents
-      
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount,
-        currency: "usd",
-        // Payment metadata with description
-        metadata: {
-          description: "PICA Monitor Registration Fee"
-        }
-      });
-      
-      res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        amount: amount / 100 // Convert back to dollars for display
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        message: `Error creating payment intent: ${error.message}` 
-      });
-    }
-  });
-
-  // Confirm organization payment
+  // Confirm organization payment (Promo code only - Stripe removed)
   app.post(`${apiPrefix}/confirm-payment/:id`, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid organization ID" });
       }
-      
+
       const organization = await storage.getOrganization(id);
       if (!organization) {
         return res.status(404).json({ message: "Organization not found" });
       }
-      
-      // Check if this is a promo code registration or a regular payment
-      const { promoCode, paymentIntentId } = req.body;
-      
-      // For promo code registrations
-      if (promoCode) {
-        const isValid = await storage.validatePromoCode(promoCode);
-        if (!isValid) {
-          return res.status(400).json({ 
-            success: false,
-            message: "Invalid promo code" 
-          });
-        }
-      } 
-      // For regular payments, ensure we have a payment intent ID
-      else if (!paymentIntentId && !organization.hasPaid) {
-        return res.status(400).json({ 
+
+      // Only promo code registrations are supported
+      const { promoCode } = req.body;
+
+      if (!promoCode) {
+        return res.status(400).json({
           success: false,
-          message: "Payment intent ID is required for paid registrations" 
+          message: "Promo code is required for registration"
         });
       }
-      
+
+      // Validate promo code
+      const isValid = await storage.validatePromoCode(promoCode);
+      if (!isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid promo code"
+        });
+      }
+
       // Update the organization payment status
       const updatedOrganization = await storage.updateOrganization(id, {
         hasPaid: true,
         subscriptionActive: true,
         promoCode: promoCode || null
       });
-      
-      res.json({ 
-        success: true, 
-        organization: updatedOrganization 
+
+      res.json({
+        success: true,
+        organization: updatedOrganization
       });
     } catch (error: any) {
-      res.status(500).json({ 
-        message: `Payment confirmation error: ${error.message}` 
+      res.status(500).json({
+        message: `Payment confirmation error: ${error.message}`
       });
     }
   });
